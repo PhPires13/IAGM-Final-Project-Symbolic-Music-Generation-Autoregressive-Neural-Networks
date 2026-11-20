@@ -224,3 +224,14 @@ __marimo__/
 
 # macOS
 .DS_Store
+
+# ---- TP2 ----
+# dataset bruto e derivados (cada um baixa/gera localmente)
+/EMOPIA_1.0.zip
+/data/
+# checkpoints, amostras geradas em massa, métricas intermediárias
+/outputs/
+/checkpoints/
+/logs/
+*.pt
+*.ckpt

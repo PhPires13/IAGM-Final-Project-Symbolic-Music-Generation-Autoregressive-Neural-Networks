@@ -1,0 +1,79 @@
+# Geração de piano com curvas de energia e tensão
+
+Trabalho final de DCC831 – IA Generativa para Música (UFMG, 2026/2).
+
+Geração de música para piano condicionada, compasso a compasso, por níveis de **energia** e **tensão**,
+usando o dataset [EMOPIA](https://annahung31.github.io/EMOPIA/), representação REMI e um Transformer
+autoregressivo escrito em PyTorch, comparado com uma cadeia de Markov de ordem n.
+
+> Em construção.
+
+## Instalação (local)
+
+Requer [uv](https://docs.astral.sh/uv/). O projeto usa Python 3.10, a mesma versão do cluster.
+
+```bash
+uv sync
+```
+
+Coloque o `EMOPIA_1.0.zip` na raiz do repositório.
+
+Depois de adicionar uma dependência (`uv add <pacote>`), regenere o `requirements.txt`:
+
+```bash
+./scripts/export_requirements.sh
+```
+
+## Execução no cluster (SLURM)
+
+O `jobs/run.slurm` carrega o módulo `pytorch/2.5.1-py3.10-cuda12.8`, monta um venv com o
+`requirements.txt` e roda o comando passado:
+
+```bash
+mkdir -p logs
+sbatch -J large jobs/run.slurm python -m src.model.train --config configs/model_large.yaml
+sbatch -J small jobs/run.slurm python -m src.model.train --config configs/model_small.yaml
+```
+
+## Reprodução
+
+_A preencher: sequência de comandos do pré-processamento à avaliação._
+
+## Estrutura
+
+```
+configs/        default.yaml (config compartilhada), tokenizer.json, control_thresholds.json
+jobs/           script SLURM
+scripts/        utilitários (export do requirements.txt)
+src/data/       split, tokenização REMI, janelas, estatísticas
+src/controls/   medição de energia e tensão, quantização, tokens de controle
+src/model/      Transformer, laço de treino
+src/baseline/   cadeia de Markov
+src/generate/   amostragem, geração condicionada, renderização de áudio
+src/eval/       métricas, OA/KL, fidelidade ao controle
+samples/        MIDIs e áudios selecionados de cada sistema
+```
+
+## Contratos entre as etapas
+
+| # | Contrato | Onde | Responsável |
+|---|---|---|---|
+| 1 | Estrutura do repositório e seed global (`seed` em `configs/default.yaml`, `src.common.set_seed`) | `src/common.py` | Leonardo |
+| 2 | Tokenizador REMI congelado, com os tokens de controle reservados como tokens especiais | `configs/tokenizer.json` | Pedro |
+| 3 | Tokens `Energy_0..K-1` e `Tension_0..K-1` (K = 3); ordem `Bar`, `Energy`, `Tension`, notas; limites = tercis do treino | `src/controls/tokens.py`, `configs/control_thresholds.json` | Julia M. |
+| 4 | Função única de medição `measure_bar(notas, tonalidade) -> (energia, tensão)`, usada no rótulo do treino e na avaliação | `src/controls/measure.py` | Julia M. |
+| 5 | Split oficial do EMOPIA (por música), salvo como `{"train": [...], "val": [...], "test": [...]}` com ids de clipe | `data/splits.json` | Pedro |
+| 6 | Interface comum `next_token_logits(prefixo (B, T)) -> logits (B, V)` | `src/model/interface.py` | Natanael e Leonardo |
+| 7 | Curvas de avaliação: curvas reais do teste e versões embaralhadas entre músicas (seed fixa), 100 ou mais amostras por sistema | `src/eval/` | Júlia B. |
+
+O conjunto de teste só é usado na avaliação final.
+
+## Contribuições
+
+| Integrante | Contribuição |
+|---|---|
+| Pedro | _a preencher_ |
+| Julia M. | _a preencher_ |
+| Natanael | _a preencher_ |
+| Leonardo | _a preencher_ |
+| Júlia B. | _a preencher_ |
