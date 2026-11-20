@@ -1,225 +1,125 @@
-# Planejamento – TP2: Geração Musical Simbólica com Redes Autoregressivas
+# Roadmap TP2 — Curvas de Energia e Tensão
 
-**Entrega:** 25/11/2026, 23:59h · **Hoje:** 20/11 → temos ~5 dias. O plano foi feito para caber nisso.
+Nov 23, 2026 · @Natan
 
-Princípio: **escolher o caminho mais simples em cada decisão** e gastar o esforço onde a nota está — cumprir *todos* os itens do enunciado e fazer uma avaliação bem feita (distribuições, não só médias).
+## Visão geral
 
----
+São cerca de 55 horas até a entrega (qua 25/11, 23:59). O plano roda as cinco frentes em paralelo e depende de um pipeline mínimo funcionando de ponta a ponta até **terça 14h**, para que o treino completo rode no cluster na noite de terça. A meta é submeter na quarta às 22h, com 2h de folga.
 
-## 1. Decisões do projeto (resumo)
+Premissas: o grupo é só de graduação (artigo de até 4 páginas, sem experimento extra obrigatório), vai treinar no cluster do DCC e ainda não implementou nada.
 
-| Item | Escolha | Por quê |
-|---|---|---|
-| Tarefa | **Composição livre (incondicional)**, a partir do zero (+ continuação de *prompt* como análise qualitativa opcional) | Não precisa de condicionamento → menos código e menos chance de erro |
-| Dataset | **Nottingham** (~1000 músicas folclóricas, melodia + acordes) | Pequeno, treina em minutos numa GPU do Colab, gera resultados agradáveis de ouvir |
-| Plano B de dataset | **JSB Chorales** (`music21.corpus`, já vem instalado, sem download) | Usar se o Nottingham der problema no dia 1 |
-| Representação | **REMI** via `miditok` | Codifica compasso e posição na batida explicitamente → bom para música métrica com ritmo regular |
-| Modelo | **Transformer decoder-only pequeno** em PyTorch puro (`nn.TransformerEncoderLayer` + máscara causal) | Exigido: PyTorch nativo; Transformer dá o melhor resultado |
-| Baseline | **Cadeia de Markov de ordem n sobre os mesmos tokens REMI** (reaproveitar o TP1) | Claramente “mais simples”; já temos código |
-| Baseline extra (opcional) | LSTM usando o mesmo laço de treino | Só se sobrar tempo; reaproveita ~95% do código |
-| Avaliação | 5 métricas do `muspy` + *overlap area* e KL (Yang & Lerch, 2020) | Enunciado pede ≥3 métricas e comparação de distribuições |
+| Pessoa | Frente | Entrega principal |
+| --- | --- | --- |
+| Pedro | Dados e representação, depois edição do artigo | Split por música, tokenização REMI, estatísticas do dataset |
+| Julia M. | Atributos de controle | Energia e tensão por compasso, quantização, tokens de controle |
+| Natanael | Transformer | Modelo, laço de treino, amostragem, treino no cluster |
+| Leonardo | Baseline, geração e repositório | Markov de ordem n, rotina de geração condicionada comum, áudios, README |
+| Júlia B. | Avaliação | Métricas do muspy, OA/KL, fidelidade ao controle, experimento com curvas embaralhadas |
 
-> ⚠️ Se o grupo tiver **algum aluno de pós-graduação**, há requisitos extras (≥5 artigos recentes nos trabalhos relacionados + experimento adicional, ex.: estudo de temperatura/top-p). Neste caso a sugestão mais barata é a **ablação de amostragem** (temperatura ∈ {0.8, 1.0, 1.2}), que reaproveita todo o pipeline.
+A divisão é uma sugestão equilibrada por carga de trabalho. Troquem os nomes à vontade, mas mantenham uma pessoa por frente.
 
----
+## Contratos a congelar hoje (seg, 23h)
 
-## 2. Pipeline técnico
+Com estes sete pontos definidos hoje à noite, as cinco frentes trabalham ao mesmo tempo sem esperar umas pelas outras. Cada um tem um responsável e fica registrado no README.
 
-### 2.1 Dados (`src/data.py`)
-1. Baixar os MIDIs do Nottingham (repositório `jukedeck/nottingham-dataset` no GitHub, pasta `MIDI/`; alternativa: `muspy.NottinghamDatabase`). Conferir no dia 1 se baixa e abre sem erro; se não, trocar para JSB Chorales.
-2. **Divisão por música** (não por trecho), 80/10/10, com `seed` fixa, salva em `data/splits.json`. Se existir partição oficial, usar a oficial.
-3. Pré-processamento:
-   - mesclar todas as trilhas em **uma única trilha** (melodia + acordes) antes de tokenizar — evita complicação com múltiplos instrumentos;
-   - descartar músicas muito curtas (ex.: < 8 compassos) e as que não forem 4/4 ou 3/4 se der problema;
-   - *data augmentation*: transposição de −5 a +6 semitons **apenas no treino**.
-4. Estatísticas para o artigo: nº de músicas por partição, duração média, nº médio de notas, faixa de alturas.
+1. **Estrutura do repositório** (Leonardo): `src/data`, `src/controls`, `src/model`, `src/baseline`, `src/generate`, `src/eval`, `configs/`, `outputs/`, com seed fixa global.
+2. **Tokenizador** (Pedro): REMI do miditok com configuração salva em `tokenizer.json` e não mexida depois disso. Os tokens de controle já entram reservados no vocabulário.
+3. **Tokens de controle** (Julia M.): `Energy_0..K-1` e `Tension_0..K-1`, sugestão K = 3. Ordem em cada compasso: `Bar`, `Energy`, `Tension` e depois as notas. Os limites dos níveis são tercis calculados **só no treino** e salvos em JSON.
+4. **Função única de medição** (Julia M.): `measure_bar(notas, tonalidade) -> (energia, tensão)`. É a mesma função que rotula o treino e que mede depois as músicas geradas. Ter duas versões dela invalidaria a métrica de fidelidade.
+5. **Split** (Pedro): usar a partição oficial do EMOPIA, se houver uma por música. Se não houver, agrupar os trechos pelo ID da música e dividir 80/10/10 com seed fixa. O resultado fica salvo em `splits.json`, e o teste só é usado na quarta.
+6. **Interface do modelo** (Natanael e Leonardo): Transformer e Markov expõem o mesmo método, `next_token_logits(prefixo) -> logits`. Assim a amostragem e o forçamento dos controles são o mesmo código para os dois.
+7. **Curvas de avaliação** (Júlia B.): as curvas reais medidas nas músicas de teste, gerando 100 ou mais amostras por sistema. Para o experimento embaralhado, as curvas são permutadas entre músicas, com seed fixa.
 
-### 2.2 Tokenização (`src/tokenize.py`)
-- `miditok.REMI` com configuração padrão (Bar, Position, Pitch, Velocity, Duration). Pode desligar Velocity se o dataset tiver velocity constante (reduz o vocabulário).
-- Adicionar tokens `BOS`/`EOS`.
-- **Reportar no artigo:** tamanho do vocabulário e comprimento médio (± desvio) das sequências.
-- Para treinar: recortar em janelas de 512 tokens (com *stride* de 256).
+## Cronograma
 
-### 2.3 Modelo (`src/model.py`) – escrito pelo grupo
-```
-Embedding(vocab, 256) + embedding posicional aprendido (512)
-→ 4 × nn.TransformerEncoderLayer(d_model=256, nhead=4, dim_feedforward=1024, dropout=0.1, batch_first=True)
-  com máscara causal (nn.Transformer.generate_square_subsequent_mask)
-→ LayerNorm → Linear(256, vocab)
-```
-~3–4M parâmetros: suficiente para o Nottingham e treina rápido.
+&#91;embedded content: cronograma · 5 fases, 4 marcos e a submissão\]
 
-### 2.4 Treino (`src/train.py`) – escrito pelo grupo
-- Perda: *cross-entropy* do próximo token (*teacher forcing*).
-- AdamW, lr 3e-4, *warmup* curto + *cosine decay*, batch 32, gradiente clipado em 1.0.
-- ~30 épocas, salvar o melhor checkpoint pela **perda de validação** (*early stopping*).
-- Logar perda de treino e validação por época em CSV → vira a **figura de curvas de treino** do artigo.
-- Rodar no Google Colab (GPU T4 gratuita) ou no Mac (`device="mps"`).
+O G2 é o único marco que não pode escorregar, porque a noite de terça é a única janela longa de treino no cluster.
 
-### 2.5 Amostragem (`src/sample.py`) – escrita pelo grupo
-- Laço autoregressivo token a token com **temperatura + top-k + top-p** (implementar os três; são ~20 linhas).
-- Configuração padrão: temperatura 1.0, top-p 0.95.
-- Gerar **N = 200 amostras** por sistema, cada uma até `EOS` ou 512 tokens.
-- Decodificar com `tokenizer.decode(...)` e salvar `.mid`.
-- Tokens inválidos na decodificação: ignorar (miditok já tolera) e reportar a taxa de amostras inválidas, se houver.
+## Tarefas por pessoa
 
-### 2.6 Baseline Markov (`src/markov.py`)
-- Contar n-gramas (ordem 4 é um bom ponto de partida; testar 2–6 na validação) sobre **os mesmos tokens de treino**.
-- Gerar a partir de `BOS` com o mesmo comprimento máximo e mesmo N = 200.
-- *Backoff* simples para ordens menores quando o contexto não foi visto.
+Cada tarefa tem o horário em que precisa estar pronta. As marcadas com G2 são pré-requisito do teste de ponta a ponta de terça às 14h.
 
-### 2.7 Avaliação (`src/evaluate.py`)
-Mesmo protocolo para **teste humano**, **Transformer** e **Markov**:
+### Pedro: dados e representação
 
-1. Ler todos os MIDIs com `muspy.read_midi`.
-2. **Recortar o conjunto de teste para o mesmo nº de compassos** que as amostras geradas (ex.: primeiros 16 compassos) — métricas como *pitch range* dependem da duração. Mencionar isso no artigo (mostra cuidado metodológico).
-3. Calcular por música (5 métricas, o mínimo é 3):
-   - `pitch_range`
-   - `n_pitch_classes_used`
-   - `pitch_class_entropy`
-   - `scale_consistency`
-   - `groove_consistency` (ou `empty_beat_rate` / `polyphony`)
-4. Comparar **distribuições** (Yang & Lerch, 2020):
-   - média ± desvio de cada sistema;
-   - **Overlap Area (OA)** entre a KDE do sistema e a KDE do teste (`scipy.stats.gaussian_kde`, integrar `min(p, q)`);
-   - **KL divergence** entre as KDEs;
-   - **violin/box plots** por métrica (uma figura com 5 subplots).
-5. Extra barato (não obrigatório, mas valoriza): **perplexidade no teste** para Transformer vs. Markov.
+- [ ] **Seg 21h**: baixar o EMOPIA no cluster, montar o split por música e salvar `splits.json`
+- [ ] **Seg 23h**: congelar `tokenizer.json` (REMI, com os tokens de controle reservados)
+- [ ] **Ter 10h** (G2): tokenizar tudo, aplicar transposição como data augmentation só no treino, recortar em janelas e salvar o dataset em PyTorch
+- [ ] **Ter 12h**: estatísticas do dataset (trechos e músicas por partição, tamanho do vocabulário, comprimento médio das sequências)
+- [ ] **Ter 14h em diante**: assumir a edição do artigo, com o template ISMIR no Overleaf e as seções da tabela abaixo
 
-**Tabela principal do artigo:**
+### Julia M.: atributos de controle
 
-| Métrica | Teste (média±dp) | Transformer (média±dp) | OA ↑ | KL ↓ | Markov (média±dp) | OA ↑ | KL ↓ |
-|---|---|---|---|---|---|---|---|
+- [ ] **Seg 23h**: especificar por escrito as fórmulas de energia e tensão
+- [ ] **Ter 10h** (G2): implementar `measure_bar`
+  - Energia: densidade de notas por compasso e velocity média, normalizadas
+  - Tensão: proporção de notas fora da escala, com a tonalidade estimada por trecho (music21), mais a taxa de intervalos dissonantes entre notas simultâneas
+- [ ] **Ter 10h** (G2): quantizar com os tercis do treino e inserir os tokens depois de cada `Bar`, junto com o Pedro
+- [ ] **Ter 13h**: verificações de sanidade (balanceamento dos níveis, correlação entre energia e tensão, gráfico das curvas de algumas músicas)
+- [ ] **Ter 18h**: gerar as curvas embaralhadas para o experimento, junto com a Júlia B.
+- [ ] **Qua**: análise qualitativa ouvindo as amostras e montagem dos slides da apresentação
 
-### 2.8 Áudio (`src/render.py`)
-- `fluidsynth -ni <soundfont.sf2> in.mid -F out.wav -r 44100` (Mac: `brew install fluid-synth`; soundfont livre, ex.: GeneralUser GS ou FluidR3_GM).
-- Converter para `.mp3` para não pesar o repositório.
-- Escolher **5 MIDIs do Transformer + 5 do Markov** (sorteados com seed, não “os melhores”, ou dizer no artigo que foram escolhidos a dedo) → `samples/transformer/` e `samples/markov/`.
+### Natanael: Transformer
 
----
+- [ ] **Seg 23h**: esboçar a classe do modelo, com `nn.Embedding`, embedding posicional aprendido, `nn.TransformerEncoderLayer` com máscara causal e cabeça linear
+- [ ] **Ter 12h** (G2): laço de treino com AdamW, warmup e decaimento cosseno, gradient clipping, checkpoints e log das curvas de treino e validação
+- [ ] **Ter 12h** (G2): amostragem própria com temperatura, top-k e top-p, ligada à rotina de geração do Leonardo
+- [ ] **Ter 15h**: disparar o treino completo no cluster. Sugestão de partida: 6 camadas, d\_model 512, 8 cabeças, contexto de 1024 tokens, dropout 0,1. Disparar junto um modelo pequeno de segurança
+- [ ] **Qua 08h**: escolher o checkpoint pela loss de validação e exportar as curvas de treino
+- [ ] **Qua 10h**: ajustar temperatura, top-k e top-p **na validação**, nunca no teste
 
-## 3. Estrutura do repositório
+### Leonardo: baseline, geração e repositório
 
-```
-README.md            # instalação, como reproduzir, contribuições de cada integrante
-requirements.txt     # torch, miditok, muspy, symusic, pretty_midi, scipy, matplotlib, pandas, tqdm
-src/
-  config.py          # hiperparâmetros e caminhos em um só lugar
-  data.py            # download, split por música, filtragem, estatísticas
-  tokenize.py        # REMI + janelas
-  model.py           # Transformer (PyTorch puro)
-  train.py           # laço de treino + log de perdas
-  sample.py          # temperatura / top-k / top-p + geração de N amostras
-  markov.py          # baseline
-  evaluate.py        # métricas muspy + OA/KL + gráficos
-  render.py          # MIDI → WAV/MP3
-results/             # CSVs de métricas, figuras, curvas de treino
-samples/
-  transformer/       # ≥5 .mid + .mp3
-  markov/            # ≥5 .mid + .mp3
-paper/               # PDF final (LaTeX fica no Overleaf, exportar no fim)
-```
+- [ ] **Seg 20h**: criar o repositório público no GitHub com a estrutura de pastas, o `requirements.txt` e o script de job do cluster, e dar acesso a todos
+- [ ] **Ter 10h** (G2): cadeia de Markov de ordem n sobre os tokens, com backoff para contextos não vistos e n escolhido pela verossimilhança na validação
+- [ ] **Ter 12h** (G2): rotina de geração comum `generate(modelo, curva, amostragem)`. A cada `Bar` gerado, ela força os tokens de energia e tensão da curva, para no número de compassos pedido e decodifica para MIDI
+- [ ] **Qua 12h**: gerar 100 ou mais amostras por sistema, com as curvas reais e com as embaralhadas
+- [ ] **Qua 14h**: renderizar áudio com FluidSynth e um soundfont livre, e subir 5 MIDIs + áudios de cada sistema para o repositório
 
-**Reprodução no README** deve ser literalmente uma sequência de comandos:
-```
-pip install -r requirements.txt
-python src/data.py
-python src/tokenize.py
-python src/train.py
-python src/sample.py --model transformer --n 200
-python src/markov.py --n 200
-python src/evaluate.py
-python src/render.py
-```
+### Júlia B.: avaliação
 
----
+- [ ] **Ter 12h** (G2): script com as métricas do muspy (amplitude de alturas, entropia de classes de altura, consistência de escala, consistência rítmica, polifonia)
+- [ ] **Ter 16h**: OA e KL no estilo de Yang e Lerch (2020), com distâncias intra e inter-conjunto e KDE. Para checar a sanidade, comparar validação com teste: a sobreposição tem que sair alta
+- [ ] **Ter 18h**: métricas de fidelidade compasso a compasso, separadas para energia e tensão: acurácia exata, acurácia com tolerância de ±1 nível e correlação de Spearman
+- [ ] **Ter 18h**: protocolo do experimento embaralhado. A fidelidade à curva pedida tem que ser maior que a fidelidade a uma curva não usada; se for igual, o modelo está ignorando o controle
+- [ ] **Qua 16h**: congelar tabelas e figuras (distribuições das métricas, curva pedida contra curva obtida)
 
-## 4. Divisão de tarefas (ajustar ao nº de integrantes)
+## Artigo ISMIR
 
-| Pessoa | Responsabilidade | Também escreve no artigo |
-|---|---|---|
-| **A – Dados** | `data.py`, `tokenize.py`, estatísticas do dataset | Método: dataset, pré-processamento, representação |
-| **B – Modelo** | `model.py`, `train.py`, `sample.py`, rodar treino no Colab | Método: arquitetura e amostragem; Experimentos: hiperparâmetros/hardware |
-| **C – Baseline + Avaliação** | `markov.py`, `evaluate.py`, tabela e gráficos | Experimentos: métricas e protocolo; Resultados |
-| **D – Artigo** | Overleaf com template ISMIR, Introdução, Trabalhos relacionados, Conclusão, revisão final | Integra tudo, controla o limite de 4 páginas |
-| **E – Áudio/Repo/Slides** | `render.py`, README, requirements, seleção das amostras, slides da apresentação | Análise qualitativa das músicas |
+| Seção | Responsável | Rascunho até |
+| --- | --- | --- |
+| Introdução e trabalhos relacionados | Pedro | Ter 20h |
+| Método: dataset, pré-processamento e REMI | Pedro | Ter 20h |
+| Método: energia, tensão e tokens de controle | Julia M. | Ter 20h |
+| Método: Transformer e amostragem | Natanael | Ter 22h |
+| Método: baseline Markov | Leonardo | Ter 22h |
+| Experimentos: hiperparâmetros e hardware | Natanael | Qua 12h |
+| Experimentos: métricas e protocolo | Júlia B. | Ter 22h |
+| Resultados e discussão | Júlia B., com análise qualitativa da Julia M. | Qua 18h |
+| Conclusão, limitações e trabalhos futuros | Pedro | Qua 19h |
+| Revisão final em conjunto | Todos | Qua 21h |
 
-Com 3 pessoas: A+E, B, C+D.
+Nos trabalhos relacionados, o mínimo é citar Music Transformer, Pop Music Transformer (REMI), o artigo do EMOPIA, um trabalho de geração com controle por atributos e Yang e Lerch (2020).
 
----
+## Riscos e checklist de entrega
 
-## 5. Cronograma
-
-| Dia | Meta | “Pronto quando…” |
-|---|---|---|
-| **Qui 20/11** | Repo + `requirements.txt`; download do dataset; split; tokenização; projeto do Overleaf criado com o template ISMIR e as seções vazias | Existe `data/splits.json` e sabemos o vocabulário e o comprimento médio |
-| **Sex 21/11** | **Pipeline ponta a ponta com modelo minúsculo** (1 camada, 1 época): treina → gera → decodifica → avalia. Markov pronto. `evaluate.py` roda sobre o teste humano | Um MIDI gerado toca e a tabela de métricas sai (mesmo que ruim) |
-| **Sáb 22/11** | Treino completo do Transformer; ajustar ordem do Markov na validação; gerar 200 amostras de cada | Checkpoint final + 400 MIDIs gerados |
-| **Dom 23/11** | Rodar avaliação final no teste; gráficos; renderizar áudios; escrever Método e Experimentos | Tabela + figuras finais no Overleaf |
-| **Seg 24/11** | Escrever Resultados/Discussão/Conclusão; README com contribuições; revisão pelo checklist abaixo | Artigo completo em ≤4 páginas |
-| **Ter 25/11** | **Folga** para imprevistos; revisão final; tornar o repo público; submeter no Moodle | Submetido antes das 23:59 |
-
-A apresentação em sala vem depois: reaproveitar as figuras do artigo + tocar 2–3 áudios (1 humano, 1 Transformer, 1 Markov).
-
----
-
-## 6. Esqueleto do artigo (4 páginas)
-
-1. **Introdução** (~0,4 pág.) – motivação, tarefa (geração livre de melodias folclóricas com acompanhamento), contribuições.
-2. **Trabalhos relacionados** (~0,4 pág.) – Music Transformer (Huang et al., 2019), Pop Music Transformer / REMI (Huang & Yang, 2020), cadeias de Markov em música, MidiTok (Fradet et al., 2021), avaliação objetiva (Yang & Lerch, 2020), MusPy (Dong et al., 2020).
-3. **Método** (~1 pág.) – dataset + pré-processamento + estatísticas; REMI (vocabulário, comprimento médio); arquitetura; baseline; amostragem.
-4. **Experimentos** (~0,5 pág.) – partições, hiperparâmetros, hardware, tempo de treino, métricas, protocolo (N amostras, recorte em 16 compassos, OA/KL).
-5. **Resultados e discussão** (~1,2 pág.) – tabela principal, figura de violinos, curvas de treino/validação, análise qualitativa (repetição de motivos, cadências, coerência rítmica; mostrar um *piano roll* lado a lado: humano × Transformer × Markov). Citar os arquivos em `samples/`.
-6. **Conclusão** (~0,3 pág.) – limitações (dataset pequeno, sem condicionamento, contexto curto) e trabalhos futuros (condicionamento por tonalidade, datasets maiores, teste de audição).
-7. **Referências** (não contam no limite).
-
----
-
-## 7. Checklist de nota total (conferir no dia 24/11)
-
-**Tarefa / dados**
-- [ ] Tarefa explicitada no artigo
-- [ ] Split treino/val/teste **por música**; teste só usado na avaliação final
-- [ ] Pré-processamento e estatísticas do dataset descritos
-
-**Representação**
-- [ ] Representação escolhida e **justificada pela tarefa**
-- [ ] Tamanho do vocabulário e comprimento médio das sequências reportados
-
-**Modelo**
-- [ ] Transformer/LSTM/GRU em **PyTorch nativo** (sem Hugging Face, `Trainer`, `x-transformers`)
-- [ ] Classe do modelo, laço de treino e amostragem (temperatura/top-k/top-p) **escritos pelo grupo**
-
-**Baseline**
-- [ ] Baseline mais simples com **mesmos dados, mesma representação e mesmo protocolo**
-- [ ] Código de terceiros, se usado, citado
-
-**Experimentos**
-- [ ] ≥3 métricas objetivas (temos 5)
-- [ ] ≥100 amostras por sistema (temos 200)
-- [ ] Comparação de **distribuições** (OA/KL + gráficos), não só médias
-- [ ] Curvas de treino e validação no artigo
-- [ ] Análise qualitativa das músicas geradas
-
-**Entregáveis**
-- [ ] Repositório GitHub **público**
-- [ ] `README.md` com instalação e reprodução
-- [ ] `requirements.txt`
-- [ ] Contribuição de cada integrante no README
-- [ ] ≥5 MIDIs + áudios do modelo e ≥5 do baseline no repo, **referenciados no artigo**
-- [ ] PDF no template ISMIR, ≤4 páginas de conteúdo
-- [ ] Submissão no Moodle por um integrante
-- [ ] Slides da apresentação
-
----
-
-## 8. Riscos e planos B
+O maior risco é o G2 (pipeline de ponta a ponta às 14h de terça) atrasar e não sobrar uma noite inteira para o treino. Se ele não fechar até terça 16h, o escopo congela no modelo pequeno.
 
 | Risco | Plano B |
-|---|---|
-| Nottingham não baixa / MIDIs quebrados | Trocar para JSB Chorales do `music21.corpus` (offline) |
-| Sem GPU / treino lento | Reduzir para `d_model=128`, 3 camadas, contexto 256; o Nottingham é pequeno o bastante para CPU/MPS |
-| Modelo gera lixo ou repete a mesma nota | Conferir a máscara causal e o deslocamento entrada/alvo; baixar temperatura para 0.9; usar top-p 0.9 |
-| Decodificação falha em algumas amostras | Pular essas amostras e reportar a taxa de falhas |
-| Métricas muspy dão `NaN` (ex.: amostra vazia) | Filtrar amostras vazias e reportar quantas foram |
-| Artigo passa de 4 páginas | Mover detalhes para o README; juntar figuras em uma só com subplots |
+| --- | --- |
+| Fila do cluster cheia ou treino que não converge | Modelo pequeno de segurança (4 camadas, d\_model 256, contexto de 512 tokens) disparado junto com o grande na terça às 15h |
+| Modelo que ignora os tokens de controle | É um resultado válido: o experimento embaralhado mostra isso, e o artigo discute. Antes, conferir o balanceamento dos níveis |
+| Tonalidade mal estimada em trechos curtos | Estimar uma tonalidade por trecho inteiro e documentar a limitação |
+| Markov esparso em ordem alta | Backoff e n pequeno, escolhido na validação |
+| Vazamento de dados | Split por música salvo na segunda, e o teste só é aberto na quarta |
+| Artigo passando de 4 páginas | Cortar texto e mandar figuras secundárias para o README, sem reduzir a fonte |
+
+Checklist da entrega (Moodle, por um integrante, até qua 23:59):
+
+- [ ] Repositório público com o código de pré-processamento, treino, geração e avaliação
+- [ ] `requirements.txt`
+- [ ] 5 MIDIs do Transformer e 5 do Markov, com áudios, no repositório e citados no artigo
+- [ ] PDF do artigo no template ISMIR, com até 4 páginas de conteúdo
+- [ ] Link do repositório e PDF enviados no Moodle
+
+Em aberto: a data da apresentação em sala. Os slides ficam com a Julia M. e podem ser feitos depois da submissão, se a apresentação for mais tarde.
