@@ -37,7 +37,15 @@ sbatch -J small jobs/run.slurm python -m src.model.train --config configs/model_
 
 ## Reprodução
 
-_A preencher: sequência de comandos do pré-processamento à avaliação._
+```bash
+# dados (o split e o tokenizador já estão versionados em configs/; os dois primeiros só regeneram)
+uv run python -m src.data.split           # split oficial do EMOPIA por música -> configs/splits.json
+uv run python -m src.data.tokenizer       # REMI congelado -> configs/tokenizer.json
+uv run python -m src.data.build_dataset   # tokens + controles + transposição -> data/processed/*.pt
+uv run python -m src.data.stats           # estatísticas -> outputs/stats/dataset_stats.json
+```
+
+_A preencher: treino, geração e avaliação._
 
 ## Estrutura
 
@@ -62,7 +70,7 @@ samples/        MIDIs e áudios selecionados de cada sistema
 | 2 | Tokenizador REMI congelado, com os tokens de controle reservados como tokens especiais | `configs/tokenizer.json` | Pedro |
 | 3 | Tokens `Energy_0..K-1` e `Tension_0..K-1` (K = 3); ordem `Bar`, `Energy`, `Tension`, notas; limites = tercis do treino | `src/controls/tokens.py`, `configs/control_thresholds.json` | Julia M. |
 | 4 | Função única de medição `measure_bar(notas, tonalidade) -> (energia, tensão)`, usada no rótulo do treino e na avaliação | `src/controls/measure.py` | Julia M. |
-| 5 | Split oficial do EMOPIA (por música), salvo como `{"train": [...], "val": [...], "test": [...]}` com ids de clipe | `data/splits.json` | Pedro |
+| 5 | Split oficial do EMOPIA (por música), salvo como `{"train": [...], "val": [...], "test": [...]}` com ids de clipe | `configs/splits.json` | Pedro |
 | 6 | Interface comum `next_token_logits(prefixo (B, T)) -> logits (B, V)` | `src/model/interface.py` | Natanael e Leonardo |
 | 7 | Curvas de avaliação: curvas reais do teste e versões embaralhadas entre músicas (seed fixa), 100 ou mais amostras por sistema | `src/eval/` | Júlia B. |
 

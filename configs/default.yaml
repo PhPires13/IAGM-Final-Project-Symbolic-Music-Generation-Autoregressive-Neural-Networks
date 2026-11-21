@@ -5,7 +5,7 @@ paths:
   emopia_zip: EMOPIA_1.0.zip            # baixado manualmente para a raiz (não versionado)
   raw_dir: data/raw                     # o zip é extraído aqui -> data/raw/EMOPIA_1.0/
   processed_dir: data/processed         # tensores .pt por partição
-  splits: data/splits.json              # {"train": [clip_id, ...], "val": [...], "test": [...]}
+  splits: configs/splits.json           # versionado; {"train": [clip_id, ...], "val": [...], "test": [...]}
   tokenizer: configs/tokenizer.json     # congelado depois de criado; versionado
   control_thresholds: configs/control_thresholds.json  # tercis do treino; versionado
   outputs_dir: outputs                  # checkpoints, amostras, métricas (não versionado)
