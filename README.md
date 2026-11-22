@@ -65,7 +65,21 @@ uv run python -m src.model.plot_curves large small   # -> outputs/figures/traini
 
 Para testar o pipeline localmente em segundos: `uv run python -m src.model.train --config configs/model_small.yaml --smoke`.
 
-_A preencher: geração e avaliação._
+```bash
+# baseline Markov (n e desconto escolhidos pela verossimilhança na validação)
+uv run python -m src.baseline.markov                # -> outputs/markov/markov.npz
+
+# geração condicionada pelas curvas reais do teste (100 amostras por sistema)
+uv run python -m src.generate.run --system transformer --checkpoint outputs/runs/large/best.pt --top-p 0.95
+uv run python -m src.generate.run --system markov
+uv run python -m src.generate.run --system human    # referência: clipes de teste com a mesma quantização
+# o ajuste de temperatura/top-k/top-p é feito com --split val, nunca no teste
+
+# áudio: 5 amostras sorteadas por sistema -> samples/
+uv run python -m src.generate.render --soundfont /caminho/FluidR3_GM.sf2 transformer markov human
+```
+
+_A preencher: avaliação._
 
 ## Estrutura
 
