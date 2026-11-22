@@ -12,6 +12,7 @@ from collections.abc import Sequence
 
 ENERGY = "Energy"
 TENSION = "Tension"
+BAR = "Bar_None"
 
 
 def control_token_names(n_levels: int) -> list[str]:
@@ -19,14 +20,30 @@ def control_token_names(n_levels: int) -> list[str]:
     return [f"{ENERGY}_{i}" for i in range(n_levels)] + [f"{TENSION}_{i}" for i in range(n_levels)]
 
 
+def control_ids(vocab: dict[str, int]) -> set[int]:
+    return {i for tok, i in vocab.items() if tok.startswith((f"{ENERGY}_", f"{TENSION}_"))}
+
+
 def insert_controls(ids: Sequence[int], levels: Sequence[tuple[int, int]], vocab: dict[str, int]) -> list[int]:
     """Insere `Energy_e`, `Tension_t` logo depois de cada `Bar` da sequência.
 
     `levels[i]` é o par (energia, tensão) já quantizado do i-ésimo compasso.
     """
-    raise NotImplementedError
+    bar = vocab[BAR]
+    n_bars = sum(1 for i in ids if i == bar)
+    if n_bars != len(levels):
+        raise ValueError(f"{n_bars} tokens Bar, mas {len(levels)} pares de níveis")
+    out: list[int] = []
+    it = iter(levels)
+    for i in ids:
+        out.append(i)
+        if i == bar:
+            e, t = next(it)
+            out.extend((vocab[f"{ENERGY}_{e}"], vocab[f"{TENSION}_{t}"]))
+    return out
 
 
 def strip_controls(ids: Sequence[int], vocab: dict[str, int]) -> list[int]:
     """Remove todos os tokens de controle (usar antes de decodificar para MIDI)."""
-    raise NotImplementedError
+    ctrl = control_ids(vocab)
+    return [i for i in ids if i not in ctrl]

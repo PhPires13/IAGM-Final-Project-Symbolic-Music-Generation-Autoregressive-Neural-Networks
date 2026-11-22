@@ -48,6 +48,8 @@ sbatch -J small jobs/run.slurm python -m src.model.train --config configs/model_
 # dados (o split e o tokenizador já estão versionados em configs/; os dois primeiros só regeneram)
 uv run python -m src.data.split           # split oficial do EMOPIA por música -> configs/splits.json
 uv run python -m src.data.tokenizer       # REMI congelado -> configs/tokenizer.json
+uv run python -m src.controls.calibrate   # tercis de energia/tensão no treino -> configs/control_thresholds.json
+uv run python -m src.controls.sanity      # balanceamento, correlação, curvas -> outputs/controls/
 uv run python -m src.data.build_dataset   # tokens + controles + transposição -> data/processed/*.pt
 uv run python -m src.data.stats           # estatísticas -> outputs/stats/dataset_stats.json
 ```
