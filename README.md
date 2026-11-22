@@ -27,7 +27,14 @@ Depois de adicionar uma dependência (`uv add <pacote>`), regenere o `requiremen
 ## Execução no cluster (SLURM)
 
 O `jobs/run.slurm` carrega o módulo `pytorch/2.5.1-py3.10-cuda12.8`, monta um venv com o
-`requirements.txt` e roda o comando passado:
+`requirements.txt` e roda o comando passado. Para o fluxo completo (dados -> treino dos dois
+modelos, encadeados por dependência do SLURM), com o `EMOPIA_1.0.zip` na raiz:
+
+```bash
+./jobs/train_all.sh              # ou --no-data para reaproveitar data/processed; --resume para continuar
+```
+
+Jobs avulsos:
 
 ```bash
 mkdir -p logs

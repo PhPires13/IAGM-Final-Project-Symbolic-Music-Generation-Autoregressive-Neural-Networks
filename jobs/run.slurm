@@ -37,14 +37,18 @@ module load pytorch/2.5.1-py3.10-cuda12.8
 
 # Venv por nó, separado de outros projetos. --system-site-packages reaproveita o torch do módulo,
 # então o `torch==2.5.1` do requirements.txt já sai satisfeito e não é baixado de novo.
+# O flock serializa a criação/instalação: dois jobs no mesmo nó não instalam no venv ao mesmo tempo.
 VENV="/tmp/venv_tp2_${USER}"
-if [ ! -d "$VENV" ]; then
-    echo "[job] criando venv em $VENV"
-    python3.10 -m venv --system-site-packages "$VENV"
-fi
+(
+    flock 9
+    if [ ! -d "$VENV" ]; then
+        echo "[job] criando venv em $VENV"
+        python3.10 -m venv --system-site-packages "$VENV"
+    fi
+    "$VENV/bin/pip" install --quiet --upgrade pip
+    "$VENV/bin/pip" install --quiet -r requirements.txt
+) 9>"$VENV.lock"
 source "$VENV/bin/activate"
-pip install --quiet --upgrade pip
-pip install --quiet -r requirements.txt
 python -c "import torch; print('[job] torch', torch.__version__, '| cuda', torch.version.cuda, '| gpu', torch.cuda.get_device_name(0))"
 
 echo "[job] comando: $*"
