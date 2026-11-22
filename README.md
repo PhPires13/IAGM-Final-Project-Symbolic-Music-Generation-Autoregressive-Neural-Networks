@@ -45,7 +45,18 @@ uv run python -m src.data.build_dataset   # tokens + controles + transposição 
 uv run python -m src.data.stats           # estatísticas -> outputs/stats/dataset_stats.json
 ```
 
-_A preencher: treino, geração e avaliação._
+```bash
+# treino do Transformer (no cluster; data/processed/ precisa ter sido gerado lá com o build_dataset)
+mkdir -p logs
+sbatch -J large jobs/run.slurm python -m src.model.train --config configs/model_large.yaml
+sbatch -J small jobs/run.slurm python -m src.model.train --config configs/model_small.yaml
+# se o job cair, o mesmo comando com --resume continua do último checkpoint
+uv run python -m src.model.plot_curves large small   # -> outputs/figures/training_curves.pdf
+```
+
+Para testar o pipeline localmente em segundos: `uv run python -m src.model.train --config configs/model_small.yaml --smoke`.
+
+_A preencher: geração e avaliação._
 
 ## Estrutura
 

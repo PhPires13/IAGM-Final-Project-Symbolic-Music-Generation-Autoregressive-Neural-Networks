@@ -1,0 +1,24 @@
+# Modelo principal. Treino no cluster: sbatch -J large jobs/run.slurm python -m src.model.train --config configs/model_large.yaml
+name: large
+
+model:
+  max_len: 1024      # contexto; também é o tamanho das janelas de treino
+  d_model: 512
+  n_layers: 6
+  n_heads: 8
+  d_ff: 2048
+  dropout: 0.1
+  tie_weights: true
+
+train:
+  stride: 512        # passo entre janelas
+  batch_size: 32
+  lr: 3.0e-4
+  min_lr_ratio: 0.1  # o cosseno decai até lr * min_lr_ratio
+  weight_decay: 0.1
+  betas: [0.9, 0.95]
+  warmup_steps: 1000
+  max_epochs: 40
+  patience: 5        # épocas sem melhorar a loss de validação antes de parar
+  grad_clip: 1.0
+  num_workers: 4
