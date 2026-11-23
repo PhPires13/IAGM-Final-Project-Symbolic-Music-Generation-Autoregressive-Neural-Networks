@@ -26,6 +26,8 @@ Depois de adicionar uma dependência (`uv add <pacote>`), regenere o `requiremen
 
 ## Execução no cluster (SLURM)
 
+Passo a passo completo, do treino às tabelas finais: [`docs/cluster.md`](docs/cluster.md).
+
 O `jobs/run.slurm` carrega o módulo `pytorch/2.5.1-py3.10-cuda12.8`, monta um venv com o
 `requirements.txt` e roda o comando passado. Para o fluxo completo (dados -> treino dos dois
 modelos, encadeados por dependência do SLURM), com o `EMOPIA_1.0.zip` na raiz:
