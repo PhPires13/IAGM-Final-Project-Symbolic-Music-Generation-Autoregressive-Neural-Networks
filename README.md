@@ -79,7 +79,12 @@ uv run python -m src.generate.run --system human    # referência: clipes de tes
 uv run python -m src.generate.render --soundfont /caminho/FluidR3_GM.sf2 transformer markov human
 ```
 
-_A preencher: avaliação._
+```bash
+# avaliação no teste: métricas do muspy (OA/KL de Yang & Lerch), fidelidade ao controle e
+# experimento embaralhado; human:val é a verificação de sanidade (validação x teste)
+uv run python -m src.generate.run --system human --split val
+uv run python -m src.eval.evaluate --systems transformer markov human:val   # -> outputs/eval/test/
+```
 
 ## Estrutura
 
