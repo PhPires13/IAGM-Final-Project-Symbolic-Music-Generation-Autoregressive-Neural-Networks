@@ -87,6 +87,24 @@ Gera 100 amostras na validação para cada combinação de temperatura {0,9; 1,0
 traz uma tabela ordenada por OA média, com a fidelidade ao controle ao lado. Escolha a configuração com
 OA alta que **não** perca fidelidade (o ganho sobre a curva embaralhada precisa continuar positivo).
 
+## 3b. Gerar as músicas de cada modelo (avulso)
+
+Para só gerar as músicas (ouvir, comparar o grande com o pequeno, levar para a apresentação), sem
+rodar a avaliação inteira:
+
+```bash
+./jobs/generate.sh                                  # large, small e markov no teste, 100 amostras cada
+./jobs/generate.sh --temperature 1.0 --top-p 0.95   # com a amostragem escolhida
+./jobs/generate.sh --models "large small" --split val --n 20
+./jobs/generate.sh --after <id-large>:<id-small>    # já deixa na fila esperando os treinos
+```
+
+Cada modelo vira um job próprio (`logs/gen-<modelo>-<id>.out`), e eles rodam em paralelo. As
+músicas ficam em `outputs/samples/<modelo>/<split>/` (`000.mid`, ..., e o `manifest.json` com a curva
+pedida de cada uma). O Markov é ajustado antes, se o `outputs/markov/markov.npz` ainda não existir.
+Para avaliar o que foi gerado: `python -m src.eval.evaluate --split <split> --systems large small markov`
+(precisa do `human` da mesma partição: `--models human`).
+
 ## 4. Avaliação final (no teste)
 
 Com a amostragem escolhida:

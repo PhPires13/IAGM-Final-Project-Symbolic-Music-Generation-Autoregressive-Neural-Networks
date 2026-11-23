@@ -34,6 +34,7 @@ modelos, encadeados por dependência do SLURM), com o `EMOPIA_1.0.zip` na raiz:
 
 ```bash
 ./jobs/train_all.sh              # ou --no-data para reaproveitar data/processed; --resume para continuar
+./jobs/generate.sh               # depois do treino: músicas do large, small e markov (um job por modelo)
 ```
 
 Jobs avulsos:
@@ -92,7 +93,7 @@ uv run python -m src.eval.evaluate --systems transformer markov human:val   # ->
 
 ```
 configs/        default.yaml (config compartilhada), tokenizer.json, control_thresholds.json
-jobs/           script SLURM
+jobs/           run.slurm (job genérico) e scripts que submetem as etapas (treino, geração, ajuste, avaliação)
 scripts/        utilitários (export do requirements.txt)
 src/data/       split, tokenização REMI, janelas, estatísticas
 src/controls/   medição de energia e tensão, quantização, tokens de controle
