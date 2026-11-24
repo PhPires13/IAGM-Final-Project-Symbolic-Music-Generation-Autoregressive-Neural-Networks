@@ -1,5 +1,5 @@
-# Modelo pequeno de segurança (plano B do roadmap), disparado junto com o grande.
-name: small
+# Ablação: modelo pequeno treinado do zero só no EMOPIA+ (sem pré-treino).
+name: scratch_small
 
 model:
   max_len: 512

@@ -1,5 +1,5 @@
-# Modelo principal. Treino no cluster: sbatch -J large jobs/run.slurm python -m src.model.train --config configs/model_large.yaml
-name: large
+# Ablação: modelo grande treinado do zero só no EMOPIA+ (sem pré-treino).
+name: scratch_large
 
 model:
   max_len: 1024      # contexto; também é o tamanho das janelas de treino

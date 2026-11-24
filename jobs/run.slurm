@@ -3,8 +3,8 @@
 #
 # Uso (da raiz do repositório; a pasta logs/ precisa existir antes do sbatch):
 #   mkdir -p logs
-#   sbatch -J large jobs/run.slurm python -m src.model.train --config configs/model_large.yaml
-#   sbatch -J small jobs/run.slurm python -m src.model.train --config configs/model_small.yaml
+#   sbatch -J pretrain_large jobs/run.slurm python -m src.model.train --config configs/pretrain_large.yaml
+#   sbatch -J finetune_large jobs/run.slurm python -m src.model.train --config configs/finetune_large.yaml
 #
 # Opções passadas ao sbatch na linha de comando (-J, --mem, --time...) sobrescrevem as de baixo.
 

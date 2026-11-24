@@ -7,12 +7,17 @@
 - checkpoints `last.pt` (para retomar) e `best.pt` (menor loss de validação);
 - log em `metrics.csv` (vira a figura de curvas de treino do artigo).
 
+Partições: `data.train` e `data.val` no YAML da execução (padrão `train`/`val`, o EMOPIA+; o
+pré-treino usa `pretrain_train`/`pretrain_val`, o Pop1K7). Com `init_from`, os pesos iniciais vêm
+de outro checkpoint (fine-tune), com otimizador e scheduler novos; a arquitetura tem que ser igual.
+
 Saída em `outputs/runs/<name>/`.
 
 Uso:
-  uv run python -m src.model.train --config configs/model_large.yaml
-  uv run python -m src.model.train --config configs/model_small.yaml --resume
-  uv run python -m src.model.train --config configs/model_small.yaml --smoke   # teste rápido do pipeline
+  uv run python -m src.model.train --config configs/pretrain_large.yaml
+  uv run python -m src.model.train --config configs/finetune_large.yaml          # depois do pré-treino
+  uv run python -m src.model.train --config configs/scratch_small.yaml --resume  # do zero, retomando
+  uv run python -m src.model.train --config configs/pretrain_small.yaml --smoke  # teste rápido do pipeline
 """
 
 from __future__ import annotations
@@ -82,7 +87,9 @@ def main() -> None:
     parser.add_argument("--config", required=True)
     parser.add_argument("--resume", action="store_true", help="continua de outputs/runs/<name>/last.pt")
     parser.add_argument("--smoke", action="store_true", help="modelo e dados minúsculos, 1 época")
+    parser.add_argument("--init-from", help="sobrescreve o init_from do YAML (ex.: checkpoint de smoke)")
     args = parser.parse_args()
+    args.smoke_skip_init = False
 
     cfg = load_config()
     run_cfg = load_config(args.config)
@@ -90,6 +97,10 @@ def main() -> None:
         run_cfg["name"] = f"{run_cfg['name']}_smoke"
         for section, values in SMOKE_OVERRIDES.items():
             run_cfg[section].update(values)
+        # no smoke a arquitetura muda, então o init_from do YAML só vale se vier de outro smoke
+        args.smoke_skip_init = bool(run_cfg.get("init_from")) and not args.init_from
+    if args.init_from:
+        run_cfg["init_from"] = args.init_from
     mcfg, tcfg = run_cfg["model"], run_cfg["train"]
     set_seed(cfg["seed"])
 
@@ -101,12 +112,15 @@ def main() -> None:
 
     tokenizer = load_tokenizer()
     pad_id = tokenizer.vocab[PAD]
-    train_data, val_data = load_split("train", cfg), load_split("val", cfg)
+    dcfg = run_cfg.get("data", {})
+    train_split, val_split = dcfg.get("train", "train"), dcfg.get("val", "val")
+    train_data, val_data = load_split(train_split, cfg), load_split(val_split, cfg)
     train_seqs, val_seqs = train_data["sequences"], val_data["sequences"]
     if args.smoke:
         train_seqs, val_seqs = train_seqs[:SMOKE_MAX_SEQS], val_seqs[:SMOKE_MAX_SEQS]
-    train_ds = WindowDataset(train_seqs, mcfg["max_len"], tcfg["stride"], pad_id)
-    val_ds = WindowDataset(val_seqs, mcfg["max_len"], mcfg["max_len"], pad_id)
+    keep = cfg["data"]["keep_prefix"]
+    train_ds = WindowDataset(train_seqs, mcfg["max_len"], tcfg["stride"], pad_id, keep)
+    val_ds = WindowDataset(val_seqs, mcfg["max_len"], mcfg["max_len"] - keep + 1, pad_id, keep)
     loader_kw = {"num_workers": tcfg["num_workers"], "pin_memory": device.type == "cuda"}
     train_loader = DataLoader(train_ds, batch_size=tcfg["batch_size"], shuffle=True, drop_last=True,
                               generator=torch.Generator().manual_seed(cfg["seed"]), **loader_kw)
@@ -114,6 +128,13 @@ def main() -> None:
 
     model_cfg = TransformerConfig(vocab_size=len(tokenizer), pad_id=pad_id, **mcfg)
     model = MusicTransformer(model_cfg).to(device)
+    init_from = run_cfg.get("init_from")
+    if init_from and not args.smoke_skip_init:
+        src = torch.load(resolve(init_from), map_location=device, weights_only=False)
+        if src["model_config"] != model.config_dict():
+            raise SystemExit(f"arquitetura de {init_from} difere da configuração: {src['model_config']} x {model.config_dict()}")
+        model.load_state_dict(src["model"])
+        print(f"pesos iniciais de {init_from} (época {src['state']['epoch']}, val {src['state']['best_val']:.4f})")
     optimizer = make_optimizer(model, tcfg)
     total_steps = tcfg["max_epochs"] * len(train_loader)
     scheduler = torch.optim.lr_scheduler.LambdaLR(
@@ -139,17 +160,21 @@ def main() -> None:
         {"run": run_cfg, "model_config": model.config_dict(), "num_params": model.num_params(),
          "train_windows": len(train_ds), "val_windows": len(val_ds), "steps_per_epoch": len(train_loader),
          "device": torch.cuda.get_device_name(0) if device.type == "cuda" else "cpu",
-         "amp_dtype": str(amp_dtype), "controls": train_data["controls"]}, indent=2) + "\n")
+         "amp_dtype": str(amp_dtype), "controls": train_data["controls"],
+         "data": {"train": train_split, "val": val_split}}, indent=2) + "\n")
     print(f"{run_cfg['name']}: {model.num_params() / 1e6:.2f}M parâmetros | {len(train_ds)} janelas de treino | "
-          f"{len(train_loader)} passos/época | {device} ({amp_dtype or 'fp32'}) | controles: {train_data['controls']}")
+          f"{len(train_loader)} passos/época | {device} ({amp_dtype or 'fp32'}) | controles: {train_data['controls']} | "
+          f"dados: {train_split}/{val_split}")
 
     def save(name: str) -> None:
         torch.save({"model": model.state_dict(), "optimizer": optimizer.state_dict(),
                     "scheduler": scheduler.state_dict(), "state": state,
                     "model_config": model.config_dict(), "run_config": run_cfg}, run_dir / name)
 
+    if state["bad_epochs"] >= tcfg["patience"] or state["epoch"] >= tcfg["max_epochs"]:
+        print(f"execução já terminada (época {state['epoch']}, early stopping ou máximo de épocas); nada a fazer")
     model.train()
-    while state["epoch"] < tcfg["max_epochs"]:
+    while state["epoch"] < tcfg["max_epochs"] and state["bad_epochs"] < tcfg["patience"]:
         t0, running, n_batches = time.time(), 0.0, 0
         for x, y in train_loader:
             x, y = x.to(device, non_blocking=True), y.to(device, non_blocking=True)
