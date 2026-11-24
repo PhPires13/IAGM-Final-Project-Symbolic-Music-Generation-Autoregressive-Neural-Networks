@@ -28,10 +28,13 @@ from src.controls.measure import measure_piece, to_levels
 Levels = list[tuple[int, int]]
 
 
-def measured_levels(midi_path, n_bars: int, thresholds: dict) -> Levels:
-    values = measure_piece(symusic.Score(midi_path))[:n_bars]
-    values += [(0.0, 0.0)] * (n_bars - len(values))
+def levels_from_values(values: list[tuple[float, float]], n_bars: int, thresholds: dict) -> Levels:
+    values = list(values[:n_bars]) + [(0.0, 0.0)] * (n_bars - len(values))
     return to_levels(values, thresholds)
+
+
+def measured_levels(midi_path, n_bars: int, thresholds: dict) -> Levels:
+    return levels_from_values(measure_piece(symusic.Score(midi_path)), n_bars, thresholds)
 
 
 def derangement(n: int, seed: int) -> np.ndarray:
