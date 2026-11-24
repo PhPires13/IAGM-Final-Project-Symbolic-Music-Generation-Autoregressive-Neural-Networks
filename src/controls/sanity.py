@@ -2,10 +2,13 @@
 
 - balanceamento dos níveis de energia e de tensão;
 - correlação de Spearman entre energia e tensão (se for muito alta, os dois controles são redundantes);
-- diferença por quadrante de emoção do EMOPIA (esperado: energia maior em Q1/Q2, de alta excitação);
+- diferença por quadrante de emoção do EMOPIA+ (esperado: energia maior em Q1/Q2, de alta excitação);
+- balanceamento dos níveis no Pop1K7 com os limites do EMOPIA+ (se houver `pretrain_values.json`);
 - gráfico das curvas de alguns clipes.
 
-Requer `src.controls.calibrate` antes. Saída em `outputs/controls/`.
+Requer `src.controls.calibrate` (com `--pretrain` para a parte do Pop1K7). Saída em `outputs/controls/`.
+
+Responsável: Julia M.
 
 Uso: uv run python -m src.controls.sanity
 """
@@ -52,6 +55,16 @@ def main() -> None:
         }
         for q in (1, 2, 3, 4)
     }
+    pre_path = out_dir / "pretrain_values.json"
+    if pre_path.exists():
+        pre = json.loads(pre_path.read_text(encoding="utf-8"))
+        pre_lv = [lv for v in pre.values() for lv in to_levels(v, thresholds)]
+        pe, pt = Counter(e for e, _ in pre_lv), Counter(t for _, t in pre_lv)
+        report["pop1k7"] = {
+            "bars": len(pre_lv),
+            "energy_level_share": {k: round(pe[k] / len(pre_lv), 3) for k in sorted(pe)},
+            "tension_level_share": {k: round(pt[k] / len(pre_lv), 3) for k in sorted(pt)},
+        }
     (out_dir / "sanity.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(report, indent=2))
 
