@@ -5,7 +5,7 @@
             109
         ],
         "beat_res": {
-            "0_4": 8,
+            "0_4": 12,
             "4_12": 4
         },
         "num_velocities": 32,
@@ -20,7 +20,12 @@
             "Energy_2",
             "Tension_0",
             "Tension_1",
-            "Tension_2"
+            "Tension_2",
+            "Emotion_Q1",
+            "Emotion_Q2",
+            "Emotion_Q3",
+            "Emotion_Q4",
+            "Emotion_None"
         ],
         "use_velocities": true,
         "use_note_duration_programs": [

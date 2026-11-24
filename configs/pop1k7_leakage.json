@@ -1,0 +1,60 @@
+{
+  "ngram": 6,
+  "threshold": 0.3,
+  "removed_songs": {
+    "src_001/71": [
+      {
+        "clip": "Q2_AWNbcxXDmt0_0",
+        "containment": 0.323
+      }
+    ],
+    "src_002/279": [
+      {
+        "clip": "Q1_xrhWli_R98g_1",
+        "containment": 0.595
+      },
+      {
+        "clip": "Q1_xrhWli_R98g_3",
+        "containment": 0.304
+      },
+      {
+        "clip": "Q4_xrhWli_R98g_0",
+        "containment": 0.664
+      },
+      {
+        "clip": "Q4_xrhWli_R98g_2",
+        "containment": 0.521
+      }
+    ],
+    "src_002/367": [
+      {
+        "clip": "Q1_zHwJG8Rrx6c_0",
+        "containment": 0.562
+      },
+      {
+        "clip": "Q1_zHwJG8Rrx6c_1",
+        "containment": 0.515
+      },
+      {
+        "clip": "Q1_zHwJG8Rrx6c_2",
+        "containment": 0.628
+      },
+      {
+        "clip": "Q1_zHwJG8Rrx6c_3",
+        "containment": 0.557
+      }
+    ]
+  },
+  "n_removed": 3,
+  "clips_matched": 9,
+  "containment_pop1k7": {
+    "p50": 0.025,
+    "p95": 0.2,
+    "max": 0.664
+  },
+  "containment_emopia_train_vs_heldout": {
+    "p50": 0.015,
+    "p95": 0.091,
+    "max": 0.846
+  }
+}

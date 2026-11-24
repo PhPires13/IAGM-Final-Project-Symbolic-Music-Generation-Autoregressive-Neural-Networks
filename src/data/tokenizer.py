@@ -1,12 +1,19 @@
 """Contrato 2: tokenizador REMI congelado em `configs/tokenizer.json`.
 
-Os MIDIs do EMOPIA são transcrições de áudio, todos com um único andamento (120 BPM) e 4/4, então
-tokens de andamento e de fórmula de compasso não carregam informação e ficam desligados. Um
-"compasso" corresponde a 4 tempos da grade de 120 BPM, ou seja, 2 segundos.
+O EMOPIA+ e o Pop1K7 estão alinhados ao beat e são todos em 4/4: o modelo trabalha em beats, e os
+tokens de fórmula de compasso ficam desligados. Os de andamento também: o andamento varia beat a
+beat (o mapa vem da sincronização com o áudio) e não faz parte do que o modelo aprende; a
+renderização usa um andamento fixo, igual para as músicas humanas e as geradas.
 
-Os tokens de controle entram como tokens especiais, já reservados no vocabulário.
+A grade de posições é de 1/12 de beat: no EMOPIA+, 85,5% dos inícios de nota caem na grade de 1/4
+de beat e 92,5% na de 1/12 (há tercinas). A grade de 1/8 não acrescenta nada à de 1/4.
+
+Os tokens de controle (energia, tensão e emoção) entram como tokens especiais, já reservados no
+vocabulário.
 
 Uso: uv run python -m src.data.tokenizer [--force]
+
+Responsável: Pedro.
 """
 
 from __future__ import annotations
@@ -25,7 +32,7 @@ PAD, BOS, EOS = "PAD_None", "BOS_None", "EOS_None"
 def build_tokenizer(n_levels: int) -> REMI:
     config = TokenizerConfig(
         pitch_range=(21, 109),               # teclado do piano
-        beat_res={(0, 4): 8, (4, 12): 4},    # posições em 1/8 de tempo (62,5 ms a 120 BPM)
+        beat_res={(0, 4): 12, (4, 12): 4},   # posições em 1/12 de beat (semicolcheias e tercinas)
         num_velocities=32,                   # a velocity entra na medida de energia
         use_chords=False,
         use_rests=False,

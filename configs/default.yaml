@@ -2,18 +2,25 @@
 seed: 42
 
 paths:
-  emopia_zip: EMOPIA_1.0.zip            # baixado manualmente para a raiz (não versionado)
-  raw_dir: data/raw                     # o zip é extraído aqui -> data/raw/EMOPIA_1.0/
+  emopia_zip: EMOPIA+.zip               # scripts/download_data.sh (Zenodo 13122742); não versionado
+  pop1k7_zip: Pop1K7.zip                # scripts/download_data.sh (Zenodo 13167761); não versionado
+  raw_dir: data/raw                     # os zips são extraídos aqui -> data/raw/{EMOPIA+,Pop1K7}/
   processed_dir: data/processed         # tensores .pt por partição
-  splits: configs/splits.json           # versionado; {"train": [clip_id, ...], "val": [...], "test": [...]}
+  splits: configs/splits.json           # versionado; {"train"|"val"|"test": [clipe do EMOPIA+], "pretrain_train"|"pretrain_val": [música do Pop1K7]}
+  leakage_report: configs/pop1k7_leakage.json  # versionado; músicas do Pop1K7 removidas por vazamento
   tokenizer: configs/tokenizer.json     # congelado depois de criado; versionado
   control_thresholds: configs/control_thresholds.json  # tercis do treino; versionado
   outputs_dir: outputs                  # checkpoints, amostras, métricas (não versionado)
 
 split:
-  # Reproduz scripts/prepare_split.ipynb do EMOPIA 1.0: split por música, estratificado pelo
-  # quadrante dominante, 8 músicas por quadrante no teste e 8 na validação, random_state=1.
+  # Divisão oficial do EMOPIA+ (por música; idêntica à do prepare_split.ipynb do EMOPIA 1.0).
   official: true
+
+pretrain:
+  val_fraction: 0.05                    # músicas do Pop1K7 na validação do pré-treino
+  transpose_range: [-3, 3]              # semitons; menor que no EMOPIA porque o Pop1K7 já é 12x maior
+  leakage_ngram: 6                      # n-gramas de intervalos da linha superior (src.data.leakage)
+  leakage_threshold: 0.3                # contenção acima disso remove a música do pré-treino
 
 controls:
   n_levels: 3                           # K: Energy_0..K-1 e Tension_0..K-1
@@ -21,7 +28,8 @@ controls:
 data:
   max_seq_len: 1024                     # tamanho das janelas de treino (= contexto do modelo grande)
   stride: 512
-  transpose_range: [-5, 6]              # semitons, só no treino
+  transpose_range: [-5, 6]              # semitons, só no treino do EMOPIA+
+  keep_prefix: 2                        # BOS Emotion repetidos no início de toda janela
 
 generation:
   n_samples: 100                        # por sistema e por condição (curvas reais / embaralhadas)

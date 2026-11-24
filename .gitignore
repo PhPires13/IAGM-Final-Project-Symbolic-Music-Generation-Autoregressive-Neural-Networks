@@ -228,6 +228,9 @@ __marimo__/
 # ---- TP2 ----
 # dataset bruto e derivados (cada um baixa/gera localmente)
 /EMOPIA_1.0.zip
+/EMOPIA+.zip
+/Pop1K7.zip
+*.zip.part
 /data/
 # checkpoints, amostras geradas em massa, métricas intermediárias
 /outputs/
