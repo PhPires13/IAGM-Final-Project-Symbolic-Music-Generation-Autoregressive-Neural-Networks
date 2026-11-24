@@ -5,13 +5,13 @@
 #
 # Uso, na raiz do repositório no cluster:
 #   ./jobs/final_eval.sh --temperature 1.0 --top-p 0.95
-#   ./jobs/final_eval.sh --checkpoint outputs/runs/small/best.pt --temperature 1.0 --top-p 0.95
+#   ./jobs/final_eval.sh --checkpoint outputs/runs/finetune_small/best.pt --temperature 1.0 --top-p 0.95
 # Resultado: outputs/eval/test/ (tables.md, results.json, figuras) e outputs/samples/.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 mkdir -p logs
 
-CKPT="outputs/runs/large/best.pt"
+CKPT="outputs/runs/finetune_large/best.pt"
 sampling=()
 while [ "$#" -gt 0 ]; do
     case "$1" in

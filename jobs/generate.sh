@@ -2,7 +2,7 @@
 # Gera as músicas de cada modelo com as curvas reais de uma partição, um job por modelo (em paralelo).
 #
 #   <execução>     -> Transformer de outputs/runs/<execução>/best.pt (ex.: finetune_large, scratch_small)
-#   markov         -> outputs/markov/markov.npz (ajustado antes, se ainda não existir)
+#   markov         -> outputs/markov/markov.npz (ajustado antes, se não existir ou se os dados forem mais novos)
 #   human          -> os clipes humanos da partição passados pelo REMI (referência da avaliação)
 #
 # Uso, na raiz do repositório no cluster, depois do treino:
@@ -43,7 +43,10 @@ for model in $MODELS; do
     case "$model" in
         markov)
             cmd="python -m src.generate.run --system markov $common"
-            [ -f outputs/markov/markov.npz ] || cmd="python -m src.baseline.markov && $cmd"
+            # reajusta se não existe ou se os dados foram reconstruídos depois (ex.: Markov do EMOPIA 1.0)
+            if [ ! -f outputs/markov/markov.npz ] || [ data/processed/train.pt -nt outputs/markov/markov.npz ]; then
+                cmd="python -m src.baseline.markov && $cmd"
+            fi
             ;;
         human)
             cmd="python -m src.generate.run --system human --split $SPLIT ${N:+--n $N}"
