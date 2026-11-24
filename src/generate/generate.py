@@ -1,13 +1,17 @@
 """Rotina de geração condicionada, comum ao Transformer e ao Markov.
 
-Cada amostra começa com `BOS Bar Energy_e0 Tension_t0`. A cada passo, todas as linhas do lote
-avançam exatamente um token (o lote fica sempre retangular):
+Cada amostra começa com `BOS Emotion_q Bar Energy_e0 Tension_t0` (q = quadrante pedido, ou None).
+A cada passo, todas as linhas do lote avançam exatamente um token (o lote fica sempre retangular):
   - se a linha tem tokens forçados na fila, usa o próximo da fila;
   - senão, amostra do modelo, com tokens de controle, PAD e BOS proibidos, e EOS proibido até a
     curva acabar;
   - se o token amostrado é `Bar` e ainda há compassos na curva, enfileira `Energy_e Tension_t` do
     próximo compasso; se a curva já acabou, a linha termina (o `Bar` é trocado por EOS).
 Linhas que terminam passam a receber PAD, que é descartado no fim.
+
+Quando a sequência passa do contexto do modelo, o prefixo enviado é `BOS Emotion` + os últimos
+`contexto - 2` tokens, exatamente como as janelas de treino (`WindowDataset` com `keep_prefix=2`):
+a emoção pedida nunca sai do contexto.
 
 Responsável: Leonardo.
 """
@@ -20,12 +24,13 @@ from dataclasses import dataclass
 
 import torch
 
-from src.controls.tokens import BAR, ENERGY, TENSION, control_ids
+from src.controls.tokens import BAR, ENERGY, TENSION, control_ids, emotion_id
 from src.data.tokenizer import BOS, EOS, PAD
 from src.generate.sampling import SamplingConfig, sample_next
 from src.model.interface import NextTokenModel
 
 Curve = Sequence[tuple[int, int]]  # (nível de energia, nível de tensão) por compasso
+KEEP_PREFIX = 2                     # BOS Emotion
 
 
 @dataclass
@@ -42,6 +47,12 @@ def _context_len(model) -> int | None:
     return getattr(cfg, "max_len", None)
 
 
+def _truncate(seq: list[int], ctx: int | None) -> list[int]:
+    if not ctx or len(seq) <= ctx:
+        return seq
+    return seq[:KEEP_PREFIX] + seq[len(seq) - (ctx - KEEP_PREFIX):]
+
+
 def _model_device(model) -> torch.device:
     if isinstance(model, torch.nn.Module):
         return next(model.parameters()).device
@@ -56,9 +67,10 @@ def generate(
     vocab: dict[str, int],
     *,
     max_tokens: int,
+    emotions: Sequence[int | None] | None = None,
     generator: torch.Generator | None = None,
 ) -> list[Generated]:
-    """Gera uma sequência por curva, em lote."""
+    """Gera uma sequência por curva (e quadrante de emoção, se dado), em lote."""
     device = _model_device(model)
     bos, eos, pad, bar = vocab[BOS], vocab[EOS], vocab[PAD], vocab[BAR]
 
@@ -70,7 +82,8 @@ def generate(
     banned = banned.to(device)
 
     b = len(curves)
-    seqs = [[bos, bar] for _ in range(b)]
+    emotions = list(emotions) if emotions is not None else [None] * b
+    seqs = [[bos, emotion_id(vocab, q), bar] for q in emotions]
     queues = [deque(controls(c[0])) for c in curves]
     next_bar = [1] * b                  # índice do próximo compasso da curva a ser aberto
     done = [False] * b
@@ -84,8 +97,7 @@ def generate(
         need_model = [i for i in range(b) if not done[i] and not queues[i]]
         sampled = {}
         if need_model:
-            prefix = torch.tensor([seqs[i][-ctx:] if ctx else seqs[i] for i in need_model],
-                                  dtype=torch.long, device=device)
+            prefix = torch.tensor([_truncate(seqs[i], ctx) for i in need_model], dtype=torch.long, device=device)
             with torch.autocast("cuda", dtype=torch.bfloat16, enabled=use_amp):
                 logits = model.next_token_logits(prefix).float().to(device)
             mask = banned.expand(len(need_model), -1).clone()

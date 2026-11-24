@@ -12,11 +12,16 @@ distintos vistos depois de h_k. Contexto nunca visto (c(h_k) = 0) recai na ordem
 Como o vocabulário tem menos de 512 tokens, um contexto de até 7 tokens cabe exatamente em um
 inteiro de 63 bits (9 bits por token), sem colisões; as contagens ficam em arrays numpy ordenados.
 
-A ordem n e o desconto D são escolhidos pela log-verossimilhança na validação. (Testamos também
-Witten-Bell: a ordem 3 já piorava em relação à 2, e a melhor NLL ficou um pouco acima.)
+A ordem n e o desconto D são escolhidos pela log-verossimilhança na validação do EMOPIA+. (Testamos
+também Witten-Bell: a ordem 3 já piorava em relação à 2, e a melhor NLL ficou um pouco acima.)
+
+Dados: os mesmos que o Transformer vê nas duas fases, para a comparação ser justa: o treino do
+EMOPIA+ (com transposição) mais o Pop1K7 sem transposição (`--no-pretrain` desliga), que cabe na
+memória do job sem perder nenhuma música.
 
 Uso:
-  uv run python -m src.baseline.markov            # ajusta n = 2..8 e D, escolhe pela validação e salva
+  uv run python -m src.baseline.markov                 # ajusta n = 2..8 e D, escolhe pela validação e salva
+  uv run python -m src.baseline.markov --no-pretrain   # só com o treino do EMOPIA+
 Saída: outputs/markov/markov.npz e outputs/markov/selection.json
 
 Responsável: Leonardo.
@@ -24,8 +29,10 @@ Responsável: Leonardo.
 
 from __future__ import annotations
 
+import argparse
 import json
 import math
+from pathlib import Path
 
 import numpy as np
 import torch
@@ -181,12 +188,26 @@ def _as_numpy(seqs: list[torch.Tensor]) -> list[np.ndarray]:
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--no-pretrain", action="store_true", help="não usa o Pop1K7")
+    args = parser.parse_args()
+
     cfg = load_config()
     max_order = MAX_CONTEXT + 1
     train, val = load_split("train", cfg), load_split("val", cfg)
     vocab_size = train["vocab_size"]
-    print(f"ajustando ordens até {max_order} em {len(train['sequences'])} sequências de treino...")
-    full = MarkovModel.fit(_as_numpy(train["sequences"]), vocab_size, max_order)
+    seqs = _as_numpy(train["sequences"])
+    sources = [f"EMOPIA+ train ({len(seqs)} sequências)"]
+    pre_path = Path(resolve(cfg["paths"]["processed_dir"])) / "pretrain_train.pt"
+    if not args.no_pretrain and pre_path.exists():
+        pre = load_split("pretrain_train", cfg)
+        extra = [s for s, t in zip(pre["sequences"], pre["transpose"]) if t == 0]
+        seqs += _as_numpy(extra)
+        sources.append(f"Pop1K7 sem transposição ({len(extra)} sequências)")
+        del pre
+    print(f"ajustando ordens até {max_order} em {sum(len(s) for s in seqs)} tokens: {' + '.join(sources)}", flush=True)
+    full = MarkovModel.fit(seqs, vocab_size, max_order)
+    del seqs
 
     val_seqs = _as_numpy(val["sequences"])
     selection = []
@@ -205,7 +226,7 @@ def main() -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     n = best["order"]
     MarkovModel(full.unigram, full.tables[: n - 1], n, best["discount"]).save(out_dir / "markov.npz")
-    (out_dir / "selection.json").write_text(json.dumps({"best": best, "all": selection}, indent=2) + "\n")
+    (out_dir / "selection.json").write_text(json.dumps({"best": best, "all": selection, "data": sources}, indent=2) + "\n")
     print(f"salvo em {out_dir / 'markov.npz'}")
 
 

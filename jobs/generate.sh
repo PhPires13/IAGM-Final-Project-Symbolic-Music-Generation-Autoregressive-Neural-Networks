@@ -1,23 +1,23 @@
 #!/usr/bin/env bash
 # Gera as músicas de cada modelo com as curvas reais de uma partição, um job por modelo (em paralelo).
 #
-#   large / small  -> Transformer de outputs/runs/<modelo>/best.pt
+#   <execução>     -> Transformer de outputs/runs/<execução>/best.pt (ex.: finetune_large, scratch_small)
 #   markov         -> outputs/markov/markov.npz (ajustado antes, se ainda não existir)
 #   human          -> os clipes humanos da partição passados pelo REMI (referência da avaliação)
 #
 # Uso, na raiz do repositório no cluster, depois do treino:
-#   ./jobs/generate.sh                                          # large small markov, teste, 100 amostras
+#   ./jobs/generate.sh                                          # finetune_large finetune_small markov, teste, 100 amostras
 #   ./jobs/generate.sh --temperature 1.0 --top-p 0.95           # com a amostragem escolhida na validação
-#   ./jobs/generate.sh --models "large markov" --split val --n 20
+#   ./jobs/generate.sh --models "finetune_large scratch_large" --split val --n 20
 #   ./jobs/generate.sh --after <id-large>:<id-small>            # espera os treinos terminarem sem erro
 #
 # Saída: outputs/samples/<modelo>/<split>/{000.mid, ..., manifest.json, ids.pt}.
-# Para avaliar depois: python -m src.eval.evaluate --split <split> --systems large small markov
+# Para avaliar depois: python -m src.eval.evaluate --split <split> --systems finetune_large finetune_small markov
 set -euo pipefail
 cd "$(dirname "$0")/.."
 mkdir -p logs
 
-MODELS="large small markov"
+MODELS="finetune_large finetune_small markov"
 SPLIT="test"
 N=""
 AFTER=""

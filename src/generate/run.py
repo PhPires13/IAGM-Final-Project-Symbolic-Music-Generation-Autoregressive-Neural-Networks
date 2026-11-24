@@ -6,11 +6,12 @@ Sistemas:
   human        os próprios clipes da partição, passados pelo REMI (tokeniza e decodifica), para a
                referência humana ter exatamente a mesma quantização das amostras geradas
 
-As curvas vêm de `data/processed/<split>.pt` (uma por clipe, sem transposição). A amostra i usa a
-curva do clipe i % n_clipes, então --n 100 no teste (88 clipes) repete 12 curvas.
+As curvas e os quadrantes de emoção vêm de `data/processed/<split>.pt` (um por clipe, sem
+transposição). A amostra i usa a curva e o quadrante do clipe i % n_clipes, então --n 100 no teste
+(88 clipes) repete 12 curvas.
 
 Saída: outputs/samples/<nome>/<split>/{000.mid, ..., manifest.json, ids.pt}, com <nome> = sistema
-ou --name. O manifesto tem, por amostra: arquivo, clipe da curva, níveis pedidos, se terminou.
+ou --name. O manifesto tem, por amostra: arquivo, clipe da curva, quadrante e níveis pedidos, se terminou.
 
 Uso:
   uv run python -m src.generate.run --system transformer --checkpoint outputs/runs/large/best.pt --top-p 0.95
@@ -41,13 +42,16 @@ from src.generate.sampling import SamplingConfig
 from src.model.transformer import load_checkpoint
 
 
-def real_curves(split: str, cfg: dict) -> tuple[list[str], list[list[tuple[int, int]]], list[torch.Tensor]]:
+def real_curves(split: str, cfg: dict):
+    """(clipes, curvas, quadrantes, sequências) das peças originais (sem transposição) da partição."""
     data = load_split(split, cfg)
     if not data["controls"]:
         raise SystemExit(f"data/processed/{split}.pt foi gerado com --no-controls; rode o build_dataset completo")
+    if "emotion" not in data:
+        raise SystemExit(f"data/processed/{split}.pt é de antes do EMOPIA+; rode o build_dataset de novo")
     keep = [i for i, t in enumerate(data["transpose"]) if t == 0]
     return ([data["clip_ids"][i] for i in keep], [[tuple(lv) for lv in data["levels"][i]] for i in keep],
-            [data["sequences"][i] for i in keep])
+            [data["emotion"][i] for i in keep], [data["sequences"][i] for i in keep])
 
 
 def main() -> None:
@@ -70,7 +74,7 @@ def main() -> None:
     set_seed(seed)
     tokenizer = load_tokenizer()
     vocab = tokenizer.vocab
-    clips, curves, sequences = real_curves(args.split, cfg)
+    clips, curves, emotions, sequences = real_curves(args.split, cfg)
     n = args.n or (len(clips) if args.system == "human" else cfg["generation"]["n_samples"])
     order = [i % len(clips) for i in range(n)]
 
@@ -97,16 +101,19 @@ def main() -> None:
         generator = torch.Generator(device=device).manual_seed(seed)
         results = []
         for start in tqdm(range(0, n, args.batch_size), desc=f"gerando ({args.system})"):
-            batch = [curves[j] for j in order[start : start + args.batch_size]]
-            max_tokens = 4 + args.max_tokens_per_bar * max(len(c) for c in batch)
+            idx = order[start : start + args.batch_size]
+            batch = [curves[j] for j in idx]
+            max_tokens = 5 + args.max_tokens_per_bar * max(len(c) for c in batch)
             results += [(g.ids, g.finished) for g in
-                        generate(model, batch, sampling, vocab, max_tokens=max_tokens, generator=generator)]
+                        generate(model, batch, sampling, vocab, max_tokens=max_tokens,
+                                 emotions=[emotions[j] for j in idx], generator=generator)]
 
     for k, (j, (ids, finished)) in enumerate(zip(order, results)):
         fname = f"{k:03d}.mid"
         decode(tokenizer, strip_controls(ids, vocab)).dump_midi(out_dir / fname)
         all_ids.append(ids)
-        manifest["samples"].append({"file": fname, "curve_clip": clips[j], "requested_levels": curves[j],
+        manifest["samples"].append({"file": fname, "curve_clip": clips[j], "emotion": emotions[j],
+                                    "requested_levels": curves[j],
                                     "finished": finished, "n_tokens": len(ids)})
 
     manifest["seconds"] = round(time.time() - t0, 1)
