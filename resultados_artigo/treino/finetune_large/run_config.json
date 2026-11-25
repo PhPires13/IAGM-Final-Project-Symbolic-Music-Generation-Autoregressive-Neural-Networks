@@ -1,0 +1,57 @@
+{
+  "run": {
+    "name": "finetune_large",
+    "init_from": "outputs/runs/pretrain_large/best.pt",
+    "data": {
+      "train": "train",
+      "val": "val"
+    },
+    "model": {
+      "max_len": 1024,
+      "d_model": 512,
+      "n_layers": 6,
+      "n_heads": 8,
+      "d_ff": 2048,
+      "dropout": 0.1,
+      "tie_weights": true
+    },
+    "train": {
+      "stride": 512,
+      "batch_size": 32,
+      "lr": 0.0001,
+      "min_lr_ratio": 0.1,
+      "weight_decay": 0.1,
+      "betas": [
+        0.9,
+        0.95
+      ],
+      "warmup_steps": 100,
+      "max_epochs": 20,
+      "patience": 3,
+      "grad_clip": 1.0,
+      "num_workers": 4
+    }
+  },
+  "model_config": {
+    "vocab_size": 326,
+    "max_len": 1024,
+    "d_model": 512,
+    "n_layers": 6,
+    "n_heads": 8,
+    "d_ff": 2048,
+    "dropout": 0.1,
+    "tie_weights": true,
+    "pad_id": 0
+  },
+  "num_params": 19606528,
+  "train_windows": 15678,
+  "val_windows": 168,
+  "steps_per_epoch": 489,
+  "device": "NVIDIA L40S",
+  "amp_dtype": "torch.bfloat16",
+  "controls": true,
+  "data": {
+    "train": "train",
+    "val": "val"
+  }
+}

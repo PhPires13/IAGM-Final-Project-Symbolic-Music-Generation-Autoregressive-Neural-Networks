@@ -1,0 +1,75 @@
+{
+  "runs": {
+    "pretrain_large": {
+      "best_epoch": 4,
+      "epochs": 7,
+      "val_loss": 1.53734,
+      "val_ppl": 4.652198948632366,
+      "train_loss_at_best": 1.47505,
+      "params_M": 19.61,
+      "seconds_per_epoch": 275.45714285714286,
+      "device": "NVIDIA L40S",
+      "val_set": "pretrain_val"
+    },
+    "pretrain_small": {
+      "best_epoch": 18,
+      "epochs": 20,
+      "val_loss": 1.57402,
+      "val_ppl": 4.826009810289065,
+      "train_loss_at_best": 1.59958,
+      "params_M": 3.37,
+      "seconds_per_epoch": 79.25,
+      "device": "NVIDIA L40S",
+      "val_set": "pretrain_val"
+    },
+    "finetune_large": {
+      "best_epoch": 1,
+      "epochs": 4,
+      "val_loss": 1.56127,
+      "val_ppl": 4.764868787495736,
+      "train_loss_at_best": 1.67235,
+      "params_M": 19.61,
+      "seconds_per_epoch": 40.975,
+      "device": "NVIDIA L40S",
+      "val_set": "val"
+    },
+    "scratch_large": {
+      "best_epoch": 5,
+      "epochs": 10,
+      "val_loss": 2.12674,
+      "val_ppl": 8.387479012003459,
+      "train_loss_at_best": 1.79612,
+      "params_M": 19.61,
+      "seconds_per_epoch": 41.050000000000004,
+      "device": "NVIDIA L40S",
+      "val_set": "val"
+    },
+    "finetune_small": {
+      "best_epoch": 2,
+      "epochs": 5,
+      "val_loss": 1.61414,
+      "val_ppl": 5.023565798634632,
+      "train_loss_at_best": 1.61987,
+      "params_M": 3.37,
+      "seconds_per_epoch": 12.66,
+      "device": "NVIDIA L40S",
+      "val_set": "val"
+    },
+    "scratch_small": {
+      "best_epoch": 5,
+      "epochs": 10,
+      "val_loss": 1.90574,
+      "val_ppl": 6.724381829507101,
+      "train_loss_at_best": 1.85186,
+      "params_M": 3.37,
+      "seconds_per_epoch": 12.709999999999999,
+      "device": "NVIDIA L40S",
+      "val_set": "val"
+    }
+  },
+  "best_finetune": "finetune_large",
+  "pretrain_gain_nats": {
+    "large": 0.5654699999999999,
+    "small": 0.2916000000000001
+  }
+}

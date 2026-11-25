@@ -1,0 +1,15 @@
+{
+  "system": "finetune_large_t0.9_p1.0",
+  "oa": 0.9359739785815722,
+  "kl": 0.026771291041999823,
+  "energy": 0.7321951219512195,
+  "energy_gain": 0.3726935643188207,
+  "tension": 0.5346341463414634,
+  "tension_gain": 0.20130081300813013,
+  "unfinished": 0,
+  "temperature": 0.9,
+  "top_k": null,
+  "top_p": 1.0,
+  "checkpoint": "outputs/runs/finetune_large/best.pt",
+  "follows_controls": true
+}
