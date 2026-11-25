@@ -3,7 +3,8 @@
 Este documento registra a mudança de rumo feita na madrugada de 25/11, depois do primeiro treino
 completo no cluster. Ele continua o roadmap original (curvas de energia e tensão por compasso, com
 Transformer e baseline Markov) e serve de base para as seções de método, experimentos e discussão do
-artigo. Os números marcados como _a preencher_ saem da execução do `jobs/pipeline.sh`.
+artigo. Os números marcados como _a preencher_ saem da execução do `jobs/pipeline.sh` (guia em
+[`pipeline.md`](pipeline.md)).
 
 ## 1. Motivação: o que deu errado no primeiro treino
 
@@ -50,6 +51,15 @@ EMOPIA [Hung et al., 2021].
 Os dois conjuntos escolhidos têm licença CC-BY 4.0 e são baixados do Zenodo por
 `scripts/download_data.sh`.
 
+Tamanho depois do pré-processamento (`src.data.build_dataset`):
+
+| Partição | Peças | Tokens (com transposição no treino) | Tokens por peça (média) |
+|---|---|---|---|
+| EMOPIA+ treino | 869 clipes × até 12 transposições | 9,9M | 975 |
+| EMOPIA+ validação / teste | 114 / 88 clipes | 116k / 83k | 1021 / 943 |
+| Pop1K7 pré-treino | 1657 músicas × até 7 transposições | 57,4M (cerca de 8,2M originais) | 4957 |
+| Pop1K7 validação | 87 músicas | 453k | 5208 |
+
 Detalhes medidos que entram no pré-processamento:
 
 - EMOPIA+: tpq 480, sempre 4/4, mediana de 18 compassos por clipe. A faixa `Chord` é uma anotação
@@ -90,7 +100,13 @@ BOS Emotion_Qx Bar Energy_e Tension_t <notas do compasso 1> Bar Energy_e Tension
   recebe `BOS Emotion_Qx` na frente, e a geração faz o mesmo quando o prefixo passa do contexto.
 - Na geração, `Emotion` e as curvas são forçados (nunca amostrados), como os controles já eram.
 
-O vocabulário passa de 289 para 294 tokens (5 de emoção) mais as novas posições da grade de 1/12.
+O vocabulário passa de 289 para 326 tokens: 5 de emoção e as posições e durações da grade de 1/12
+(48 posições por compasso, antes 32).
+
+Com os limites recalculados no treino do EMOPIA+ (energia 0,360 e 0,497; tensão 0,067 e 0,145), os
+níveis ficam em 33/33/33, a correlação de Spearman entre energia e tensão é de 0,15, e a energia
+média separa os quadrantes de excitação: Q1 0,51 e Q2 0,57, contra Q3 0,35 e Q4 0,35. No Pop1K7, com
+os mesmos limites, a energia fica em 37/49/15% e a tensão em 28/38/34%.
 
 ## 5. Vazamento entre Pop1K7 e EMOPIA
 
@@ -101,13 +117,26 @@ inflaria as métricas. Antes do pré-treino, `src/data/leakage.py` compara impre
 teste do EMOPIA+ e **remove do pré-treino** toda música que contém mais de 30% dos n-gramas de
 algum desses clipes.
 
-- Músicas do Pop1K7 removidas: _a preencher_ (sai em `outputs/data/leakage.json`).
+Para calibrar o limiar, o mesmo cálculo entre clipes de validação/teste e músicas do treino do
+EMOPIA+ (que são outras músicas, por construção da divisão) dá mediana de 0,015 e p95 de 0,091.
+
+Resultado (`configs/pop1k7_leakage.json`): **3 músicas do Pop1K7 removidas**. Duas delas
+(`src_002/279` e `src_002/367`) contêm de 51% a 66% dos n-gramas de todos os clipes de duas músicas
+de validação/teste do EMOPIA+, ou seja, são o mesmo cover; a terceira passa um pouco do limiar
+(0,32). Sobram 1744 músicas: 1657 no pré-treino e 87 na validação do pré-treino.
+
+O cálculo de referência mostrou também um caso dentro do próprio EMOPIA: um clipe de validação/teste
+com contenção de 0,85 numa música do treino com outro id do YouTube (provavelmente dois covers da
+mesma composição). É uma característica da divisão oficial, que mantemos para comparar com a
+literatura, e fica registrada como limitação.
 
 ## 6. Baseline com os mesmos dados
 
 Para a comparação continuar justa, o Markov é ajustado nos mesmos dados que o Transformer viu:
-Pop1K7 (sem transposição, para caber na memória) mais o treino do EMOPIA+ com transposição. A ordem
-n e o desconto D continuam escolhidos na validação do EMOPIA+.
+Pop1K7 (sem transposição, para caber na memória) mais o treino do EMOPIA+ com transposição, num
+total de 18,2M de tokens. A ordem n e o desconto D continuam escolhidos na validação do EMOPIA+.
+Resultado: n = 4, D = 0,9, perplexidade de validação de 25,7 (no EMOPIA 1.0 era 32,7, com outro
+vocabulário; os números não são diretamente comparáveis).
 
 ## 7. Experimentos
 
@@ -131,7 +160,7 @@ Resultados (_a preencher_ com `outputs/runs/summary.md` e `outputs/eval/test/tab
 
 | | Perplexidade de validação (EMOPIA+) |
 |---|---|
-| Markov | _a preencher_ |
+| Markov | 25,7 |
 | `scratch_small` / `scratch_large` | _a preencher_ |
 | `finetune_small` / `finetune_large` | _a preencher_ |
 
@@ -143,7 +172,7 @@ Resultados (_a preencher_ com `outputs/runs/summary.md` e `outputs/eval/test/tab
 | 2. Tokenizador | REMI, 1/8 de beat, 289 tokens | REMI, 1/12 de beat, tokens `Emotion_*` |
 | 3. Tokens de controle | `Bar Energy Tension` | `BOS Emotion` no início, depois `Bar Energy Tension` |
 | 4. Medição | `measure_bar` em janelas de 2 s | mesma função, em compassos de verdade |
-| 5. Split | reprodução do notebook do EMOPIA 1.0 | CSVs oficiais do EMOPIA+ (mesma divisão por música); Pop1K7 com 5% das músicas para validação do pré-treino |
+| 5. Split | reprodução do notebook do EMOPIA 1.0 | CSVs oficiais do EMOPIA+ (conferimos: as músicas de cada partição são exatamente as da nossa reprodução); Pop1K7 com 5% das músicas para validação do pré-treino |
 | 6. Interface do modelo | `next_token_logits` | igual |
 | 7. Curvas de avaliação | curvas reais do teste | curvas e quadrante reais do teste |
 
@@ -156,7 +185,9 @@ Pop1K7.
   tensão medida por notas fora da escala fica menos precisa.
 - Só o EMOPIA tem rótulo de emoção, e são 876 clipes de treino: o modelo aprende o efeito de cada
   quadrante com pouco dado.
-- Os indicadores de emoção (energia e modo maior) são aproximações; não há avaliação perceptual.
+- Os indicadores de emoção (energia e modo maior) são aproximações; não há avaliação perceptual. Nos
+  próprios clipes humanos do teste, o modo maior separa bem Q2 (16%) de Q1 e Q4 (88% e 78%), mas Q3
+  (triste) ainda tem 48% de músicas em modo maior.
 - O REMI não tem tokens de andamento: as músicas são renderizadas num andamento fixo, igual para as
   humanas e as geradas.
 - O Pop1K7 é transcrição automática; erros de transcrição entram no pré-treino.
