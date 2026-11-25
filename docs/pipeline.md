@@ -116,7 +116,7 @@ Na sua máquina (precisa de FluidSynth, ffmpeg e um soundfont livre):
 
 ```bash
 rsync -av <usuario>@<login-do-cluster>:~/<pasta-do-repositorio>/outputs/ outputs/ --exclude '*.pt'
-uv run python -m src.generate.render --soundfont /caminho/FluidR3_GM.sf2 finetune_large markov human
+python -m src.generate.render --soundfont /caminho/FluidR3_GM.sf2 finetune_large markov human
 ```
 
 O `render` sorteia 5 músicas por sistema (seed fixa) e grava `.mid` e `.mp3` em `samples/`, que vai
@@ -128,12 +128,12 @@ As mesmas etapas rodam localmente com modelos minúsculos, para conferir o encad
 
 ```bash
 export PYTHONPATH=.
-uv run python -m src.data.build_dataset
-uv run python -m src.model.train --config configs/pretrain_small.yaml --smoke
-uv run python -m src.model.train --config configs/finetune_small.yaml --smoke --init-from outputs/runs/pretrain_small_smoke/best.pt
-uv run python -m src.model.train --config configs/scratch_small.yaml --smoke
-uv run python -m src.pipeline select --suffix _smoke
-uv run python -m src.pipeline plot --suffix _smoke
-uv run python -m src.pipeline tune --suffix _smoke --n 4 --temperatures 0.9 --top-ps 0.95
-uv run python -m src.pipeline final --suffix _smoke --n 4
+python -m src.data.build_dataset
+python -m src.model.train --config configs/pretrain_small.yaml --smoke
+python -m src.model.train --config configs/finetune_small.yaml --smoke --init-from outputs/runs/pretrain_small_smoke/best.pt
+python -m src.model.train --config configs/scratch_small.yaml --smoke
+python -m src.pipeline select --suffix _smoke
+python -m src.pipeline plot --suffix _smoke
+python -m src.pipeline tune --suffix _smoke --n 4 --temperatures 0.9 --top-ps 0.95
+python -m src.pipeline final --suffix _smoke --n 4
 ```

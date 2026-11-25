@@ -13,7 +13,7 @@ Dois backends de áudio:
     convertido para M4A (AAC) com o `afconvert`. Não precisa de soundfont nem de ffmpeg.
 
 Uso:
-  uv run python -m src.generate.render --soundfont /caminho/FluidR3_GM.sf2 finetune_large markov human
+  python -m src.generate.render --soundfont /caminho/FluidR3_GM.sf2 finetune_large markov human
   python -m src.generate.render --backend macos --samples-dir resultados_artigo/musicas/teste \
       finetune_large markov human
 Saída: samples/<sistema>/<sistema>_<nnn>.mid e .mp3/.m4a (versionados), mais samples/selection.json

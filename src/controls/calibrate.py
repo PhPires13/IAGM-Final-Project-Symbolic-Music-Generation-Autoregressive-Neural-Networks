@@ -6,7 +6,7 @@ para o Pop1K7 no pré-treino, para que um nível signifique a mesma coisa nas du
 os valores brutos em `outputs/controls/train_values.json` e, com `--pretrain`, os do Pop1K7 em
 `outputs/controls/pretrain_values.json`, para as verificações de sanidade.
 
-Uso: uv run python -m src.controls.calibrate [--pretrain]
+Uso: python -m src.controls.calibrate [--pretrain]
 
 Responsável: Julia M.
 

@@ -11,7 +11,7 @@ de beat e 92,5% na de 1/12 (há tercinas). A grade de 1/8 não acrescenta nada �
 Os tokens de controle (energia, tensão e emoção) entram como tokens especiais, já reservados no
 vocabulário.
 
-Uso: uv run python -m src.data.tokenizer [--force]
+Uso: python -m src.data.tokenizer [--force]
 
 Responsável: Pedro.
 """

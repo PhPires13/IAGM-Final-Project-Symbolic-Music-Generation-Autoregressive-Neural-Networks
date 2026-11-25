@@ -10,7 +10,7 @@ Requer `src.controls.calibrate` (com `--pretrain` para a parte do Pop1K7). Saíd
 
 Responsável: Julia M.
 
-Uso: uv run python -m src.controls.sanity
+Uso: python -m src.controls.sanity
 """
 
 from __future__ import annotations

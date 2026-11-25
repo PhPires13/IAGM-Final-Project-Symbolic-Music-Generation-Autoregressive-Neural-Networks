@@ -67,7 +67,7 @@ hardware do artigo.
 ```bash
 # na SUA máquina, na raiz do repositório
 rsync -av <usuario>@<login-do-cluster>:~/<pasta-do-repositorio>/outputs/ outputs/ --exclude '*.pt'
-uv run python -m src.generate.render --soundfont /caminho/FluidR3_GM.sf2 finetune_large markov human
+python -m src.generate.render --soundfont /caminho/FluidR3_GM.sf2 finetune_large markov human
 ```
 
 ## Problemas comuns

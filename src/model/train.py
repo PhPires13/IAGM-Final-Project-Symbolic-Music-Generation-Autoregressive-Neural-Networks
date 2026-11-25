@@ -14,10 +14,10 @@ de outro checkpoint (fine-tune), com otimizador e scheduler novos; a arquitetura
 Saída em `outputs/runs/<name>/`.
 
 Uso:
-  uv run python -m src.model.train --config configs/pretrain_large.yaml
-  uv run python -m src.model.train --config configs/finetune_large.yaml          # depois do pré-treino
-  uv run python -m src.model.train --config configs/scratch_small.yaml --resume  # do zero, retomando
-  uv run python -m src.model.train --config configs/pretrain_small.yaml --smoke  # teste rápido do pipeline
+  python -m src.model.train --config configs/pretrain_large.yaml
+  python -m src.model.train --config configs/finetune_large.yaml          # depois do pré-treino
+  python -m src.model.train --config configs/scratch_small.yaml --resume  # do zero, retomando
+  python -m src.model.train --config configs/pretrain_small.yaml --smoke  # teste rápido do pipeline
 """
 
 from __future__ import annotations

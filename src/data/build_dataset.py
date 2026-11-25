@@ -22,9 +22,9 @@ Pop1K7 transposto; `WindowDataset` converte para long. O recorte em janelas é f
 `src.data.dataset`.
 
 Uso:
-  uv run python -m src.data.build_dataset                       # todas as partições
-  uv run python -m src.data.build_dataset --splits train val    # só algumas
-  uv run python -m src.data.build_dataset --no-controls         # sem tokens de controle (teste)
+  python -m src.data.build_dataset                       # todas as partições
+  python -m src.data.build_dataset --splits train val    # só algumas
+  python -m src.data.build_dataset --no-controls         # sem tokens de controle (teste)
 
 Responsável: Pedro.
 """

@@ -20,8 +20,8 @@ EMOPIA+ (com transposição) mais o Pop1K7 sem transposição (`--no-pretrain` d
 memória do job sem perder nenhuma música.
 
 Uso:
-  uv run python -m src.baseline.markov                 # ajusta n = 2..8 e D, escolhe pela validação e salva
-  uv run python -m src.baseline.markov --no-pretrain   # só com o treino do EMOPIA+
+  python -m src.baseline.markov                 # ajusta n = 2..8 e D, escolhe pela validação e salva
+  python -m src.baseline.markov --no-pretrain   # só com o treino do EMOPIA+
 Saída: outputs/markov/markov.npz e outputs/markov/selection.json
 
 Responsável: Leonardo.

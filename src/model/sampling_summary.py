@@ -9,7 +9,7 @@ nenhuma tiver, a de maior OA, com um aviso). Ela vai para `outputs/eval/<split>/
 com a temperatura, o top-k e o top-p lidos do manifesto das amostras, e é usada pelo
 `jobs/pipeline.sh` na geração final.
 
-Uso: uv run python -m src.model.sampling_summary --split val [--prefix finetune_large]
+Uso: python -m src.model.sampling_summary --split val [--prefix finetune_large]
 """
 
 from __future__ import annotations

@@ -7,7 +7,7 @@
   pré-treino, depois de remover as que vazam para a validação/teste do EMOPIA+ (`src.data.leakage`).
   O relatório do vazamento fica em `configs/pop1k7_leakage.json`.
 
-Uso: uv run python -m src.data.split
+Uso: python -m src.data.split
 """
 
 from __future__ import annotations

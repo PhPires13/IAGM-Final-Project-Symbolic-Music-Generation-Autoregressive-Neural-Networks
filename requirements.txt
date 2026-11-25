@@ -1,4 +1,4 @@
-# Gerado por scripts/export_requirements.sh a partir do uv.lock. Não editar à mão.
+# Dependências com versões fixas (Python 3.10). Instalar com: pip install -r requirements.txt
 anyio==4.16.0 ; sys_platform != 'emscripten'
 bidict==0.23.1
 certifi==2026.11.20

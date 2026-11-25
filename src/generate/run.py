@@ -14,11 +14,11 @@ Saída: outputs/samples/<nome>/<split>/{000.mid, ..., manifest.json, ids.pt}, co
 ou --name. O manifesto tem, por amostra: arquivo, clipe da curva, quadrante e níveis pedidos, se terminou.
 
 Uso:
-  uv run python -m src.generate.run --system transformer --checkpoint outputs/runs/large/best.pt --top-p 0.95
-  uv run python -m src.generate.run --system markov
-  uv run python -m src.generate.run --system human
+  python -m src.generate.run --system transformer --checkpoint outputs/runs/large/best.pt --top-p 0.95
+  python -m src.generate.run --system markov
+  python -m src.generate.run --system human
   # ajuste de amostragem: sempre na validação
-  uv run python -m src.generate.run --system transformer --checkpoint ... --split val --temperature 0.9 --name tf_t09
+  python -m src.generate.run --system transformer --checkpoint ... --split val --temperature 0.9 --name tf_t09
 
 Responsável: Leonardo.
 """

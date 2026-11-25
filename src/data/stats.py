@@ -6,7 +6,7 @@ de janelas.
 
 Saída: `outputs/stats/dataset_stats.json` e uma tabela em markdown no terminal.
 
-Uso: uv run python -m src.data.stats
+Uso: python -m src.data.stats
 """
 
 from __future__ import annotations

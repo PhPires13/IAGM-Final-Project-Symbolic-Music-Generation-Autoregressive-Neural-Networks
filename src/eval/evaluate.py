@@ -17,8 +17,8 @@ Emoção por quadrante pedido (sem classificador, dois indicadores medidos em ca
   O "gap" de cada sistema é a diferença entre os dois grupos; a referência humana mostra o esperado.
 
 Uso:
-  uv run python -m src.eval.evaluate --systems transformer markov human:val
-  uv run python -m src.eval.evaluate --split val --systems tf_t09 tf_t10 markov   # ajuste de amostragem
+  python -m src.eval.evaluate --systems transformer markov human:val
+  python -m src.eval.evaluate --split val --systems tf_t09 tf_t10 markov   # ajuste de amostragem
 
 Responsável: Júlia B.
 """

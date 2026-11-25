@@ -32,18 +32,18 @@ plano original): [`docs/pivo_pretreino.md`](docs/pivo_pretreino.md).
 
 ## Instalação (local)
 
-Requer [uv](https://docs.astral.sh/uv/). O projeto usa Python 3.10, a mesma versão do cluster.
+Requer **Python 3.10**, a mesma versão do cluster (o `torch==2.5.1` não tem pacote para versões mais
+novas em todas as plataformas).
 
 ```bash
-uv sync
+python3.10 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
 ./scripts/download_data.sh     # EMOPIA+.zip e Pop1K7.zip (Zenodo, CC-BY 4.0) na raiz
 ```
 
-Depois de adicionar uma dependência (`uv add <pacote>`), regenere o `requirements.txt`:
-
-```bash
-./scripts/export_requirements.sh
-```
+No Linux ou Windows sem GPU, acrescente `--extra-index-url https://download.pytorch.org/whl/cpu` ao
+`pip install` para baixar o torch só de CPU, em vez dos ~2,5 GB de bibliotecas CUDA.
 
 ## Execução no cluster (SLURM)
 
@@ -62,27 +62,27 @@ comuns: [`docs/cluster.md`](docs/cluster.md).
 ```bash
 export PYTHONPATH=.
 # dados (split, tokenizador, limites e relatório de vazamento já estão versionados em configs/)
-uv run python -m src.data.split                # divisão oficial do EMOPIA+ + Pop1K7 sem vazamento -> configs/splits.json
-uv run python -m src.data.tokenizer --force    # REMI com grade de 1/12 de beat -> configs/tokenizer.json
-uv run python -m src.controls.calibrate --pretrain   # tercis no treino do EMOPIA+ -> configs/control_thresholds.json
-uv run python -m src.controls.sanity           # balanceamento, correlação, energia por quadrante -> outputs/controls/
-uv run python -m src.data.build_dataset        # tokens + emoção + controles + transposição -> data/processed/*.pt
-uv run python -m src.data.stats                # estatísticas -> outputs/stats/dataset_stats.json
+python -m src.data.split                # divisão oficial do EMOPIA+ + Pop1K7 sem vazamento -> configs/splits.json
+python -m src.data.tokenizer --force    # REMI com grade de 1/12 de beat -> configs/tokenizer.json
+python -m src.controls.calibrate --pretrain   # tercis no treino do EMOPIA+ -> configs/control_thresholds.json
+python -m src.controls.sanity           # balanceamento, correlação, energia por quadrante -> outputs/controls/
+python -m src.data.build_dataset        # tokens + emoção + controles + transposição -> data/processed/*.pt
+python -m src.data.stats                # estatísticas -> outputs/stats/dataset_stats.json
 
 # treino (no cluster): pré-treino, fine-tune e ablação do zero
-uv run python -m src.model.train --config configs/pretrain_large.yaml
-uv run python -m src.model.train --config configs/finetune_large.yaml
-uv run python -m src.model.train --config configs/scratch_large.yaml
+python -m src.model.train --config configs/pretrain_large.yaml
+python -m src.model.train --config configs/finetune_large.yaml
+python -m src.model.train --config configs/scratch_large.yaml
 # teste rápido local: --smoke (e --init-from outputs/runs/pretrain_small_smoke/best.pt no fine-tune)
 
 # seleção, figuras, ajuste de amostragem (validação) e avaliação final (teste)
-uv run python -m src.pipeline select
-uv run python -m src.pipeline plot
-uv run python -m src.pipeline tune
-uv run python -m src.pipeline final            # Markov + geração + avaliação -> outputs/eval/test/
+python -m src.pipeline select
+python -m src.pipeline plot
+python -m src.pipeline tune
+python -m src.pipeline final            # Markov + geração + avaliação -> outputs/eval/test/
 
 # áudio: 5 pedidos sorteados (seed fixa), os mesmos em todos os sistemas -> samples/
-uv run python -m src.generate.render --soundfont /caminho/FluidR3_GM.sf2 finetune_large markov human
+python -m src.generate.render --soundfont /caminho/FluidR3_GM.sf2 finetune_large markov human
 # alternativa no macOS, sem soundfont nem ffmpeg (banco GS do sistema, saída .m4a), a partir das músicas do cluster:
 python -m src.generate.render --backend macos --samples-dir resultados_artigo/musicas/teste finetune_large markov human
 ```
@@ -97,7 +97,7 @@ latex/             fonte do artigo (template ISMIR) e script das figuras
 src/               código (ver abaixo)
 configs/           default.yaml, YAMLs das execuções, split, tokenizador, limites dos níveis, vazamento
 jobs/              run.slurm (job genérico), pipeline.sh (tudo encadeado) e scripts das etapas avulsas
-scripts/           download dos dados, export do requirements.txt, render de áudio no macOS
+scripts/           download dos dados, render de áudio no macOS
 docs/              enunciado, roadmap, pivô, guias do pipeline e do cluster, notas dos resultados
 ```
 

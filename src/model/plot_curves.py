@@ -1,8 +1,8 @@
 """Figura das curvas de treino e validação (loss por época) a partir de `metrics.csv`.
 
 Uso:
-  uv run python -m src.model.plot_curves pretrain_large pretrain_small --out pretrain_curves
-  uv run python -m src.model.plot_curves scratch_large finetune_large scratch_small finetune_small --out emopia_curves
+  python -m src.model.plot_curves pretrain_large pretrain_small --out pretrain_curves
+  python -m src.model.plot_curves scratch_large finetune_large scratch_small finetune_small --out emopia_curves
 Saída: outputs/figures/<out>.pdf (e .png). Execuções sem metrics.csv são puladas com um aviso.
 Junte na mesma figura só execuções avaliadas na mesma validação (Pop1K7 ou EMOPIA+).
 """
