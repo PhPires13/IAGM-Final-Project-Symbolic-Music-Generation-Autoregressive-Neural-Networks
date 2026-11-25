@@ -21,6 +21,11 @@ plano original): [`docs/pivo_pretreino.md`](docs/pivo_pretreino.md).
 - **Amostras para ouvir:** [`samples/`](samples/), com MIDI e áudio (`.m4a`). São 5 pedidos (curva + quadrante de um clipe de
   teste) sorteados com seed fixa e gerados pelos dois sistemas; `finetune_large_014` e `markov_014` receberam o mesmo
   pedido, e `samples/selection.json` liga cada arquivo ao clipe humano de origem (`samples/human/`).
+- **Análise qualitativa (escuta):** [`docs/analise_qualitativa/`](docs/analise_qualitativa/), com o guia de avaliação
+  (formulário em PDF) e as fichas preenchidas por dois integrantes, que ouviram os 5 pedidos acima. As médias e as
+  observações estão na seção 5 do artigo.
+- **Apresentação:** [`entregas/slides.html`](entregas/slides.html), um arquivo único que funciona offline, com os
+  trechos de áudio embutidos (abra no navegador; ← → navegam, P toca, F tela cheia, T cronômetro).
 
 | Pedido (clipe de teste) | Quadrante | Transformer (pré-treino + ajuste fino) | Markov | Clipe humano |
 |---|---|---|---|---|
@@ -90,7 +95,7 @@ python -m src.generate.render --backend macos --samples-dir resultados_artigo/mu
 ## Estrutura
 
 ```
-entregas/          resumo e artigo em PDF
+entregas/          o que foi entregue: resumo e artigo em PDF e os slides da apresentação (HTML)
 samples/           5 pedidos sorteados: MIDI + áudio do Transformer, do Markov e do clipe humano
 resultados_artigo/ tabelas, figuras e músicas da rodada final no cluster (base do artigo)
 latex/             fonte do artigo (template ISMIR) e script das figuras
@@ -98,7 +103,8 @@ src/               código (ver abaixo)
 configs/           default.yaml, YAMLs das execuções, split, tokenizador, limites dos níveis, vazamento
 jobs/              run.slurm (job genérico), pipeline.sh (tudo encadeado) e scripts das etapas avulsas
 scripts/           download dos dados, render de áudio no macOS
-docs/              enunciado, roadmap, pivô, guias do pipeline e do cluster, notas dos resultados
+docs/              enunciado, roadmap, pivô, guias do pipeline e do cluster, notas dos resultados, análise qualitativa
+transcricoes/      conversas com as ferramentas de IA, uma por integrante (ver "Uso de IA")
 ```
 
 | Código | O que faz |
@@ -119,6 +125,7 @@ docs/              enunciado, roadmap, pivô, guias do pipeline e do cluster, no
 | [`docs/pipeline.md`](docs/pipeline.md) | como rodar todos os experimentos com um comando |
 | [`docs/cluster.md`](docs/cluster.md) | ambiente no cluster do DCC e etapas avulsas |
 | [`docs/notas_resultados.md`](docs/notas_resultados.md) | resultados comentados da rodada final |
+| [`docs/analise_qualitativa/`](docs/analise_qualitativa/) | guia de escuta (formulário em PDF) e fichas preenchidas da análise qualitativa |
 
 ## Contratos entre as etapas
 
