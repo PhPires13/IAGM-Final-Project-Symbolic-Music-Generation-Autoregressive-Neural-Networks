@@ -143,3 +143,25 @@ O conjunto de teste só é usado na avaliação final.
 | Natanael dos Santos | Transformer: modelo, laço de treino e amostragem; pré-treino, ajuste fino e ablação no cluster (SLURM); roadmap do projeto |
 | Leonardo Cesar Cota de Castro | Estrutura do repositório e contratos; baseline Markov; rotina de geração condicionada comum; pipeline único dos experimentos; renderização |
 | Júlia Borba Fonseca de Souza | Avaliação: métricas do MusPy, OA/KL, fidelidade ao controle, experimento com curvas embaralhadas, emoção por quadrante, escolha da amostragem e notas dos resultados |
+
+## Uso de IA
+
+O trabalho contou com o auxílio de IA durante o seu desenvolvimento. Cada integrante usou as ferramentas abaixo:
+
+- **Pedro — Claude Code (Claude Opus 5.5, esforço médio)**
+  - Planejamento do projeto, ajuda teórica, suporte de código na parte de dados (ensinar, melhorias, bugs), registro do pivô, melhoria da escrita e da formatação do artigo e organização do repositório
+  - Transcrição: [`transcricoes/transcricao_sessao_pedro_pires.md`](transcricoes/transcricao_sessao_pedro_pires.md)
+- **Julia M. — Hotmart Chat (GPT Sol)**
+  - Ajuda teórica (tonalidade, escala, dissonância), suporte de código na medição de energia e tensão e nos tokens de controle, dúvidas na geração das amostras
+  - Transcrição: [`transcricoes/transcricao_sessao_julia_moura.md`](transcricoes/transcricao_sessao_julia_moura.md)
+- **Natanael — Claude Code (Claude Opus 5.5, esforço alto)**
+  - Roadmap do projeto, suporte de código no Transformer, no laço de treino e na amostragem, scripts do cluster (SLURM) e correção de erros do ambiente
+  - Transcrição: [`transcricoes/transcricao_sessao_natan.md`](transcricoes/transcricao_sessao_natan.md)
+- **Leonardo — Kiro (plano gratuito, Claude Sonnet 4.5)**
+  - Estrutura do repositório e contratos, suporte de código no baseline Markov, na geração condicionada e no pipeline, README
+  - Transcrição: [`transcricoes/transcricao_sessao_leonardo.md`](transcricoes/transcricao_sessao_leonardo.md)
+- **Júlia B. — Hotmart Chat (GPT Sol)**
+  - Ajuda teórica (OA, KL e KDE no estilo de Yang & Lerch), suporte de código nas métricas e na fidelidade ao controle, interpretação dos resultados do cluster
+  - Transcrição: [`transcricoes/transcricao_sessao_julia_borba.md`](transcricoes/transcricao_sessao_julia_borba.md)
+
+As sessões dessas ferramentas ficam salvas só localmente ou na conta de cada pessoa, sem opção de compartilhar por link. Com isso, os arquivos estão em [`transcricoes/`](transcricoes/).
