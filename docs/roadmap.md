@@ -2,7 +2,7 @@
 
 Nov 23, 2026 · @Natan
 
-> **Atualização 25/11 (pivô):** depois do primeiro treino completo, o projeto passou a usar o **EMOPIA+** (MIDIs alinhados ao beat), com **pré-treino no Pop1K7**, e ganhou um token de emoção global (`BOS Emotion_Q1..Q4`) antes das curvas por compasso. Os contratos abaixo continuam valendo com os ajustes da tabela da seção 8 de [`docs/pivo_pretreino.md`](docs/pivo_pretreino.md). A execução está em [`docs/pipeline.md`](docs/pipeline.md) e os números em [`docs/notas_resultados.md`](docs/notas_resultados.md).
+> **Atualização 25/11 (pivô):** depois do primeiro treino completo, o projeto passou a usar o **EMOPIA+** (MIDIs alinhados ao beat), com **pré-treino no Pop1K7**, e ganhou um token de emoção global (`BOS Emotion_Q1..Q4`) antes das curvas por compasso. Os contratos abaixo continuam valendo com os ajustes da tabela da seção 8 de [`pivo_pretreino.md`](pivo_pretreino.md). A execução está em [`pipeline.md`](pipeline.md) e os números em [`notas_resultados.md`](notas_resultados.md).
 
 ## Visão geral
 

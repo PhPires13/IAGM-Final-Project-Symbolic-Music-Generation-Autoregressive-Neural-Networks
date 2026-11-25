@@ -1,6 +1,6 @@
 # Notas dos resultados do cluster (rodada de 25/11)
 
-Fonte: `outputs/` do cluster, trazido por rsync (os caminhos abaixo são relativos a essa pasta). Todas as execuções rodaram numa NVIDIA L40S com bf16.
+Fonte: `outputs/` do cluster, trazido por rsync (os caminhos abaixo são relativos a essa pasta; a cópia versionada está em [`../resultados_artigo/`](../resultados_artigo/)). Todas as execuções rodaram numa NVIDIA L40S com bf16.
 O teste foi gerado com a amostragem escolhida na validação, **t = 0,9 e top-p = 1,0**, com 100 amostras
 por sistema e seed 42.
 
@@ -145,10 +145,8 @@ OA média das 7 métricas (quanto maior, melhor). O teto é o `human:val`, que c
 | `eval/test/curves.pdf` | um exemplo por sistema; o laranja tem um pequeno deslocamento vertical para ficar visível; o painel `human:val` usa outro clipe (7 compassos), então não compare o painel humano visualmente com os outros |
 | `figures/training_curves.*` | do EMOPIA 1.0, não usar |
 
-## 8. Pendências práticas
+## 8. Onde estão os arquivos
 
-- **O `render` lê `outputs/samples/`:** traga o `outputs/` do cluster (sem os `.pt`) para a raiz do repositório antes de rodar:
-  ```bash
-  uv run python -m src.generate.render --soundfont /caminho/FluidR3_GM.sf2 finetune_large markov human
-  ```
-- **Preencher a seção de resultados** de `docs/pivo_pretreino.md` com as tabelas 1 a 4 acima.
+- Cópia dos resultados desta rodada (sem os checkpoints): [`../resultados_artigo/`](../resultados_artigo/).
+- Amostras sorteadas com áudio: [`../samples/`](../samples/), geradas com `src.generate.render` (ver README).
+- Artigo: [`../entregas/IAGM_Projeto_Final_Artigo.pdf`](../entregas/IAGM_Projeto_Final_Artigo.pdf).

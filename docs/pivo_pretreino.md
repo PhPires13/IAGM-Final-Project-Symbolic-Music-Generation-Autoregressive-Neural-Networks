@@ -3,8 +3,9 @@
 Este documento registra a mudança de rumo feita na madrugada de 25/11, depois do primeiro treino
 completo no cluster. Ele continua o roadmap original (curvas de energia e tensão por compasso, com
 Transformer e baseline Markov) e serve de base para as seções de método, experimentos e discussão do
-artigo. Os números marcados como _a preencher_ saem da execução do `jobs/pipeline.sh` (guia em
-[`pipeline.md`](pipeline.md)).
+artigo. Os números saem da execução do `jobs/pipeline.sh` (guia em [`pipeline.md`](pipeline.md)); a
+cópia dos resultados da rodada final está em [`../resultados_artigo/`](../resultados_artigo/) e a análise
+completa em [`notas_resultados.md`](notas_resultados.md).
 
 ## 1. Motivação: o que deu errado no primeiro treino
 
@@ -156,13 +157,13 @@ Avaliação, sempre com o teste do EMOPIA+:
   Q4) e fração de músicas em modo maior pela tonalidade estimada (ligada à valência: Q1 e Q4 devem
   ter mais que Q2 e Q3). A referência humana mostra o tamanho esperado da separação.
 
-Resultados (_a preencher_ com `outputs/runs/summary.md` e `outputs/eval/test/tables.md`):
+Resultados (de `resultados_artigo/treino/summary.md`; detalhes em [`notas_resultados.md`](notas_resultados.md)):
 
 | | Perplexidade de validação (EMOPIA+) |
 |---|---|
 | Markov | 25,7 |
-| `scratch_small` / `scratch_large` | _a preencher_ |
-| `finetune_small` / `finetune_large` | _a preencher_ |
+| `scratch_small` / `scratch_large` | 6,72 / 8,39 |
+| `finetune_small` / `finetune_large` | 5,02 / 4,76 |
 
 ## 8. O que muda em cada contrato do roadmap
 

@@ -8,7 +8,27 @@ PyTorch é pré-treinado no [Pop1K7](https://zenodo.org/records/13167761) e ajus
 [EMOPIA+](https://zenodo.org/records/13122742), com representação REMI, e comparado com uma cadeia de
 Markov de ordem n treinada nos mesmos dados.
 
-Por que EMOPIA+ e pré-treino (e não o EMOPIA 1.0 do plano original): [`docs/pivo_pretreino.md`](docs/pivo_pretreino.md).
+Enunciado do trabalho: [`docs/enunciado.md`](docs/enunciado.md). Por que EMOPIA+ e pré-treino (e não o EMOPIA 1.0 do
+plano original): [`docs/pivo_pretreino.md`](docs/pivo_pretreino.md).
+
+## Resultados, amostras e artigo
+
+- **Artigo (ISMIR, 4 páginas):** [`entregas/IAGM_Projeto_Final_Artigo.pdf`](entregas/IAGM_Projeto_Final_Artigo.pdf); fonte em [`latex/main.tex`](latex/main.tex)
+  (compilar com `cd latex && tectonic main.tex`; as figuras saem de `python latex/figuras/make_figures.py`).
+- **Resultados da rodada final no cluster:** [`resultados_artigo/`](resultados_artigo/) (tabelas e figuras de treino, validação e
+  teste, e as 100 músicas geradas por sistema). Notas e números comentados em
+  [`docs/notas_resultados.md`](docs/notas_resultados.md).
+- **Amostras para ouvir:** [`samples/`](samples/), com MIDI e áudio (`.m4a`). São 5 pedidos (curva + quadrante de um clipe de
+  teste) sorteados com seed fixa e gerados pelos dois sistemas; `finetune_large_014` e `markov_014` receberam o mesmo
+  pedido, e `samples/selection.json` liga cada arquivo ao clipe humano de origem (`samples/human/`).
+
+| Pedido (clipe de teste) | Quadrante | Transformer (pré-treino + ajuste fino) | Markov | Clipe humano |
+|---|---|---|---|---|
+| `Q1_e838BE_MH6s_1` | Q1 | `finetune_large_014` | `markov_014` | `human_014` |
+| `Q2_AWNbcxXDmt0_0` | Q2 | `finetune_large_031` | `markov_031` | `human_031` |
+| `Q2_DYBBfpEx-JI_0` | Q2 | `finetune_large_035` | `markov_035` | `human_035` |
+| `Q4_jCLgDtk695I_3` | Q4 | `finetune_large_081` | `markov_081` | `human_081` |
+| `Q1_GY3f6ckBVkA_1` | Q1 | `finetune_large_091` | `markov_091` | `human_003` |
 
 ## Instalação (local)
 
@@ -67,44 +87,38 @@ uv run python -m src.generate.render --soundfont /caminho/FluidR3_GM.sf2 finetun
 python -m src.generate.render --backend macos --samples-dir resultados_artigo/musicas/teste finetune_large markov human
 ```
 
-## Resultados, amostras e artigo
-
-- **Artigo (ISMIR, 4 páginas):** [`entregas/IAGM_Projeto_Final_Artigo.pdf`](entregas/IAGM_Projeto_Final_Artigo.pdf); fonte em [`latex/main.tex`](latex/main.tex)
-  (compilar com `cd latex && tectonic main.tex`; as figuras saem de `python latex/figuras/make_figures.py`).
-- **Resultados da rodada final no cluster:** [`resultados_artigo/`](resultados_artigo/) (tabelas e figuras de treino, validação e
-  teste, e as 100 músicas geradas por sistema). Notas e números comentados em
-  [`docs/notas_resultados.md`](docs/notas_resultados.md).
-- **Amostras para ouvir:** [`samples/`](samples/), com MIDI e áudio (`.m4a`). São 5 pedidos (curva + quadrante de um clipe de
-  teste) sorteados com seed fixa e gerados pelos dois sistemas; `finetune_large_014` e `markov_014` receberam o mesmo
-  pedido, e `samples/selection.json` liga cada arquivo ao clipe humano de origem (`samples/human/`).
-
-| Pedido (clipe de teste) | Quadrante | Transformer (pré-treino + ajuste fino) | Markov | Clipe humano |
-|---|---|---|---|---|
-| `Q1_e838BE_MH6s_1` | Q1 | `finetune_large_014` | `markov_014` | `human_014` |
-| `Q2_AWNbcxXDmt0_0` | Q2 | `finetune_large_031` | `markov_031` | `human_031` |
-| `Q2_DYBBfpEx-JI_0` | Q2 | `finetune_large_035` | `markov_035` | `human_035` |
-| `Q4_jCLgDtk695I_3` | Q4 | `finetune_large_081` | `markov_081` | `human_081` |
-| `Q1_GY3f6ckBVkA_1` | Q1 | `finetune_large_091` | `markov_091` | `human_003` |
-
 ## Estrutura
 
 ```
-configs/        default.yaml, YAMLs das execuções (pretrain/finetune/scratch), splits, tokenizador, limites, vazamento
-jobs/           run.slurm (job genérico), pipeline.sh (tudo encadeado) e scripts das etapas avulsas
-scripts/        download dos dados, export do requirements.txt
-docs/           pivô do projeto, guia do pipeline, guia do cluster
-src/data/       EMOPIA+, Pop1K7, split, vazamento, tokenização REMI, janelas, estatísticas
-src/controls/   medição de energia e tensão, quantização, tokens de controle
-src/model/      Transformer, laço de treino
-src/baseline/   cadeia de Markov
-src/generate/   amostragem, geração condicionada, renderização de áudio
-src/eval/       métricas, OA/KL, fidelidade ao controle, emoção por quadrante
-src/pipeline.py etapas pós-treino do pipeline (seleção, figuras, ajuste, avaliação final)
-samples/        MIDIs e áudios selecionados de cada sistema
-resultados_artigo/  tabelas, figuras e músicas da rodada final do cluster (base do artigo)
-latex/          fonte do artigo no template ISMIR e script das figuras
-entregas/       resumo e artigo em PDF
+entregas/          resumo e artigo em PDF
+samples/           5 pedidos sorteados: MIDI + áudio do Transformer, do Markov e do clipe humano
+resultados_artigo/ tabelas, figuras e músicas da rodada final no cluster (base do artigo)
+latex/             fonte do artigo (template ISMIR) e script das figuras
+src/               código (ver abaixo)
+configs/           default.yaml, YAMLs das execuções, split, tokenizador, limites dos níveis, vazamento
+jobs/              run.slurm (job genérico), pipeline.sh (tudo encadeado) e scripts das etapas avulsas
+scripts/           download dos dados, export do requirements.txt, render de áudio no macOS
+docs/              enunciado, roadmap, pivô, guias do pipeline e do cluster, notas dos resultados
 ```
+
+| Código | O que faz |
+|---|---|
+| `src/data/` | EMOPIA+, Pop1K7, split, vazamento, tokenização REMI, janelas, estatísticas |
+| `src/controls/` | medição de energia e tensão, quantização, tokens de controle e de emoção |
+| `src/model/` | Transformer, laço de treino, figuras de treino, resumo da grade de amostragem |
+| `src/baseline/` | cadeia de Markov |
+| `src/generate/` | amostragem (temperatura, top-k, top-p), geração condicionada, renderização de áudio |
+| `src/eval/` | métricas do MusPy, OA/KL, fidelidade ao controle, emoção por quadrante |
+| `src/pipeline.py` | etapas pós-treino (seleção, figuras, ajuste da amostragem, avaliação final) |
+
+| Documento | Conteúdo |
+|---|---|
+| [`docs/enunciado.md`](docs/enunciado.md) | enunciado do trabalho |
+| [`docs/roadmap.md`](docs/roadmap.md) | plano original: divisão de tarefas, contratos, cronograma e checklist |
+| [`docs/pivo_pretreino.md`](docs/pivo_pretreino.md) | mudança para EMOPIA+ e pré-treino no Pop1K7, com o desenho dos experimentos |
+| [`docs/pipeline.md`](docs/pipeline.md) | como rodar todos os experimentos com um comando |
+| [`docs/cluster.md`](docs/cluster.md) | ambiente no cluster do DCC e etapas avulsas |
+| [`docs/notas_resultados.md`](docs/notas_resultados.md) | resultados comentados da rodada final |
 
 ## Contratos entre as etapas
 
