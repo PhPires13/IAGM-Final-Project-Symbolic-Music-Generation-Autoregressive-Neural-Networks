@@ -2,6 +2,8 @@
 
 Nov 23, 2026 · @Natan
 
+> **Atualização 25/11 (pivô):** depois do primeiro treino completo, o projeto passou a usar o **EMOPIA+** (MIDIs alinhados ao beat), com **pré-treino no Pop1K7**, e ganhou um token de emoção global (`BOS Emotion_Q1..Q4`) antes das curvas por compasso. Os contratos abaixo continuam valendo com os ajustes da tabela da seção 8 de [`docs/pivo_pretreino.md`](docs/pivo_pretreino.md). A execução está em [`docs/pipeline.md`](docs/pipeline.md) e os números em [`docs/notas_resultados.md`](docs/notas_resultados.md).
+
 ## Visão geral
 
 São cerca de 55 horas até a entrega (qua 25/11, 23:59). O plano roda as cinco frentes em paralelo e depende de um pipeline mínimo funcionando de ponta a ponta até **terça 14h**, para que o treino completo rode no cluster na noite de terça. A meta é submeter na quarta às 22h, com 2h de folga.
@@ -32,7 +34,13 @@ Com estes sete pontos definidos hoje à noite, as cinco frentes trabalham ao mes
 
 ## Cronograma
 
-&#91;embedded content: cronograma · 5 fases, 4 marcos e a submissão\]
+| Quando | Fase | Marco |
+| --- | --- | --- |
+| Seg até 23h | Contratos e esqueleto | **G1**: os sete contratos congelados e registrados no README |
+| Ter até 14h | Pipeline mínimo | **G2**: dado → tokens → treino curto → geração com curva → MIDI → métricas, de ponta a ponta |
+| Ter 15h → Qua 08h | Treino completo no cluster | **G3**: checkpoint escolhido pela loss de validação |
+| Qua 08h → 16h | Ajuste da amostragem, geração no teste e avaliação | **G4**: tabelas e figuras congeladas |
+| Qua 16h → 22h | Artigo, áudios e repositório | **Submissão** às 22h, com 2h de folga |
 
 O G2 é o único marco que não pode escorregar, porque a noite de terça é a única janela longa de treino no cluster.
 
@@ -114,12 +122,31 @@ O maior risco é o G2 (pipeline de ponta a ponta às 14h de terça) atrasar e n�
 | Vazamento de dados | Split por música salvo na segunda, e o teste só é aberto na quarta |
 | Artigo passando de 4 páginas | Cortar texto e mandar figuras secundárias para o README, sem reduzir a fonte |
 
-Checklist da entrega (Moodle, por um integrante, até qua 23:59):
+Checklist da entrega (Moodle, por um integrante, até qua 23:59). Cada item corresponde a um requisito do enunciado; conferir antes de submeter.
 
-- [ ] Repositório público com o código de pré-processamento, treino, geração e avaliação
+**No artigo**
+
+- [ ] Tarefa explicitada: composição condicionada por emoção e por curvas de energia e tensão
+- [ ] Dataset, pré-processamento e estatísticas, com o split **por música** e o teste usado só na avaliação final
+- [ ] Representação REMI justificada pela tarefa, com tamanho do vocabulário e comprimento médio das sequências
+- [ ] Como a condição é representada (tokens `Emotion`, `Energy` e `Tension`)
+- [ ] Transformer, laço de treino e amostragem (temperatura, top-k, top-p) escritos pelo grupo em PyTorch nativo, sem Hugging Face nem `x-transformers`
+- [ ] Baseline Markov com os mesmos dados, a mesma representação e o mesmo protocolo
+- [ ] 3 ou mais métricas objetivas, comparando **distribuições** (OA/KL e figuras) com o teste, e 100 ou mais amostras por sistema
+- [ ] Curvas de treino e validação
+- [ ] Análise qualitativa das músicas geradas, citando os arquivos do repositório
+- [ ] Template ISMIR, até 4 páginas de conteúdo
+
+**No repositório (público)**
+
+- [ ] Código de pré-processamento, treino, geração e avaliação
+- [ ] `README.md` com instalação e reprodução dos resultados
 - [ ] `requirements.txt`
-- [ ] 5 MIDIs do Transformer e 5 do Markov, com áudios, no repositório e citados no artigo
-- [ ] PDF do artigo no template ISMIR, com até 4 páginas de conteúdo
-- [ ] Link do repositório e PDF enviados no Moodle
+- [ ] Contribuição de cada integrante no README
+- [ ] 5 MIDIs do Transformer e 5 do Markov, com os áudios
+
+**No Moodle**
+
+- [ ] Link do repositório e PDF do artigo enviados
 
 Em aberto: a data da apresentação em sala. Os slides ficam com a Julia M. e podem ser feitos depois da submissão, se a apresentação for mais tarde.
