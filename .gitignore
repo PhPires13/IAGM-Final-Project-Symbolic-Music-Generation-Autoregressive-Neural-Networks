@@ -238,3 +238,4 @@ __marimo__/
 /logs/
 *.pt
 *.ckpt
+latex/main.pdf
