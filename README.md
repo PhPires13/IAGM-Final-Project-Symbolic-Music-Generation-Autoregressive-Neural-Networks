@@ -61,9 +61,30 @@ uv run python -m src.pipeline plot
 uv run python -m src.pipeline tune
 uv run python -m src.pipeline final            # Markov + geração + avaliação -> outputs/eval/test/
 
-# áudio: 5 amostras sorteadas por sistema -> samples/
+# áudio: 5 pedidos sorteados (seed fixa), os mesmos em todos os sistemas -> samples/
 uv run python -m src.generate.render --soundfont /caminho/FluidR3_GM.sf2 finetune_large markov human
+# alternativa no macOS, sem soundfont nem ffmpeg (banco GS do sistema, saída .m4a), a partir das músicas do cluster:
+python -m src.generate.render --backend macos --samples-dir resultados_artigo/musicas/teste finetune_large markov human
 ```
+
+## Resultados, amostras e artigo
+
+- **Artigo (ISMIR, 4 páginas):** [`entregas/IAGM_Projeto_Final_Artigo.pdf`](entregas/IAGM_Projeto_Final_Artigo.pdf); fonte em [`latex/main.tex`](latex/main.tex)
+  (compilar com `cd latex && tectonic main.tex`; as figuras saem de `python latex/figuras/make_figures.py`).
+- **Resultados da rodada final no cluster:** [`resultados_artigo/`](resultados_artigo/) (tabelas e figuras de treino, validação e
+  teste, e as 100 músicas geradas por sistema). Notas e números comentados em
+  [`docs/notas_resultados.md`](docs/notas_resultados.md).
+- **Amostras para ouvir:** [`samples/`](samples/), com MIDI e áudio (`.m4a`). São 5 pedidos (curva + quadrante de um clipe de
+  teste) sorteados com seed fixa e gerados pelos dois sistemas; `finetune_large_014` e `markov_014` receberam o mesmo
+  pedido, e `samples/selection.json` liga cada arquivo ao clipe humano de origem (`samples/human/`).
+
+| Pedido (clipe de teste) | Quadrante | Transformer (pré-treino + ajuste fino) | Markov | Clipe humano |
+|---|---|---|---|---|
+| `Q1_e838BE_MH6s_1` | Q1 | `finetune_large_014` | `markov_014` | `human_014` |
+| `Q2_AWNbcxXDmt0_0` | Q2 | `finetune_large_031` | `markov_031` | `human_031` |
+| `Q2_DYBBfpEx-JI_0` | Q2 | `finetune_large_035` | `markov_035` | `human_035` |
+| `Q4_jCLgDtk695I_3` | Q4 | `finetune_large_081` | `markov_081` | `human_081` |
+| `Q1_GY3f6ckBVkA_1` | Q1 | `finetune_large_091` | `markov_091` | `human_003` |
 
 ## Estrutura
 
@@ -80,6 +101,9 @@ src/generate/   amostragem, geração condicionada, renderização de áudio
 src/eval/       métricas, OA/KL, fidelidade ao controle, emoção por quadrante
 src/pipeline.py etapas pós-treino do pipeline (seleção, figuras, ajuste, avaliação final)
 samples/        MIDIs e áudios selecionados de cada sistema
+resultados_artigo/  tabelas, figuras e músicas da rodada final do cluster (base do artigo)
+latex/          fonte do artigo no template ISMIR e script das figuras
+entregas/       resumo e artigo em PDF
 ```
 
 ## Contratos entre as etapas
@@ -100,8 +124,8 @@ O conjunto de teste só é usado na avaliação final.
 
 | Integrante | Contribuição |
 |---|---|
-| Pedro | _a preencher_ |
-| Julia M. | _a preencher_ |
-| Natanael | _a preencher_ |
-| Leonardo | _a preencher_ |
-| Júlia B. | _a preencher_ |
+| Pedro Henrique Gonçalves Pires | Dados e representação: split oficial do EMOPIA+, Pop1K7 e verificação de vazamento, tokenizador REMI (grade de 1/12), dataset em janelas e estatísticas; registro do pivô; artigo, resumo e áudios das amostras |
+| Julia Souza Moura | Atributos de controle: medição de energia e tensão por compasso, quantização por tercis, tokens de controle e de emoção, verificações de sanidade dos níveis |
+| Natanael dos Santos | Transformer: modelo, laço de treino e amostragem; pré-treino, ajuste fino e ablação no cluster (SLURM); roadmap do projeto |
+| Leonardo Cesar Cota de Castro | Estrutura do repositório e contratos; baseline Markov; rotina de geração condicionada comum; pipeline único dos experimentos; renderização |
+| Júlia Borba Fonseca de Souza | Avaliação: métricas do MusPy, OA/KL, fidelidade ao controle, experimento com curvas embaralhadas, emoção por quadrante, escolha da amostragem e notas dos resultados |
